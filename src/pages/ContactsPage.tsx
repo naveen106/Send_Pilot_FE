@@ -5,7 +5,6 @@ import { Contact } from '../types';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, Users, X, Upload, Send, FileSpreadsheet } from 'lucide-react';
 
-type Tab = 'contacts' | 'import';
 const EMPTY_ROW = { email: '', name: '' };
 
 export default function ContactsPage() {
@@ -13,7 +12,7 @@ export default function ContactsPage() {
   const location = useLocation();
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const [tab, setTab] = useState<Tab>('contacts');
+  const tab = location.pathname === '/imports' ? 'import' : 'contacts';
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [total, setTotal] = useState(0);
   const [rows, setRows] = useState([{ ...EMPTY_ROW }]);
@@ -99,7 +98,7 @@ export default function ContactsPage() {
       toast.success(`Imported ${res.data.data.imported}, skipped ${res.data.data.skipped}`);
       setImportFile(null);
       load();
-      setTab('contacts');
+      navigate('/contacts');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Import failed');
     } finally { setImporting(false); }
@@ -121,18 +120,6 @@ export default function ContactsPage() {
             <Send size={14} /> Send Campaign to {selected.size} contact{selected.size > 1 ? 's' : ''}
           </button>
         )}
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-1 mb-5 glass rounded-xl p-1 w-fit">
-        {(['contacts', 'import'] as Tab[]).map((t) => (
-          <button key={t} onClick={() => setTab(t)}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-all duration-200 capitalize ${
-              tab === t ? 'bg-violet-600 text-white shadow' : 'text-slate-400 hover:text-slate-200'
-            }`}>
-            {t === 'import' ? 'Import' : 'Contacts'}
-          </button>
-        ))}
       </div>
 
       {/* ── CONTACTS TAB ── */}

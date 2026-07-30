@@ -26,6 +26,7 @@ export default function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="campaigns" element={<ProtectedRoute roles={['ADMIN', 'MANAGER']}><CampaignsPage /></ProtectedRoute>} />
             <Route path="contacts" element={<ProtectedRoute roles={['ADMIN', 'MANAGER']}><ContactsPage /></ProtectedRoute>} />
+            <Route path="imports" element={<ProtectedRoute roles={['ADMIN', 'MANAGER']}><ContactsPage /></ProtectedRoute>} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
