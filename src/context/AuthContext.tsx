@@ -3,9 +3,6 @@ import { User, Role } from '../types';
 import { authApi } from '../api';
 import {
   mockLogin,
-  mockRegister,
-  mockForgotPassword,
-  mockResetPassword,
   mockGetUserFromToken,
 } from '../api/mockAuth';
 
@@ -71,15 +68,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function register(email: string, password: string, name: string, role: Role = 'ADMIN') {
-    mockRegister(email, password, name, role);
+    await authApi.register({ email, password, name, role });
   }
 
   async function forgotPassword(email: string): Promise<string> {
-    return mockForgotPassword(email);
+    await authApi.forgotPassword(email);
+    return ''; // token is sent via email by the backend
   }
 
   async function resetPassword(resetToken: string, newPassword: string) {
-    mockResetPassword(resetToken, newPassword);
+    await authApi.resetPassword(resetToken, newPassword);
   }
 
   function logout() {
