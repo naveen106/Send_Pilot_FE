@@ -17,7 +17,7 @@ export default function UsersPage() {
 
   useEffect(() => { load(); }, []);
 
-  async function handleRegister(e: React.FormEvent) {
+  async function handleRegister(e: { preventDefault(): void }) {
     e.preventDefault();
     try {
       await authApi.register(form);

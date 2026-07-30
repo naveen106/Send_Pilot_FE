@@ -11,7 +11,7 @@ export default function LoginPage() {
   const emailRef = useRef<HTMLInputElement>(null);
   const passwordRef = useRef<HTMLInputElement>(null);
 
-  async function handleSignIn(e: React.FormEvent) {
+  async function handleSignIn(e: { preventDefault(): void }) {
     e.preventDefault();
     setLoading(true);
     try {

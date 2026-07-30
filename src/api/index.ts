@@ -31,7 +31,21 @@ export const dashboardApi = {
 export const campaignsApi = {
   getAll: (page = 1, limit = 10) => api.get(`/campaigns?page=${page}&limit=${limit}`),
   getOne: (id: number) => api.get(`/campaigns/${id}`),
-  create: (data: object) => api.post('/campaigns', data),
+  create: (data: {
+    name: string; subject: string; to: string; cc?: string; bcc?: string;
+    htmlContent: string; scheduledAt?: string; attachments?: File[];
+  }) => {
+    const form = new FormData();
+    form.append('name', data.name);
+    form.append('subject', data.subject);
+    form.append('to', data.to);
+    if (data.cc) form.append('cc', data.cc);
+    if (data.bcc) form.append('bcc', data.bcc);
+    form.append('htmlContent', data.htmlContent);
+    if (data.scheduledAt) form.append('scheduledAt', data.scheduledAt);
+    data.attachments?.forEach((f) => form.append('attachments', f));
+    return api.post('/campaigns', form);
+  },
   sendNow: (id: number) => api.post(`/campaigns/${id}/send`),
   retry: (id: number) => api.post(`/campaigns/${id}/retry`),
 };
