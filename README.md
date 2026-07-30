@@ -27,8 +27,8 @@ A dark-themed bulk email management platform built with React, TypeScript, and T
 
 ```bash
 # 1. Clone the repository
-git clone <your-github-repo-url>
-cd <repo-name>
+git clone https://github.com/monkhaihq/bulk-email-sender-fe.git
+cd frontend
 
 # 2. Install dependencies
 npm install
