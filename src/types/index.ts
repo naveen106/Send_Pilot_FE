@@ -18,6 +18,9 @@ export interface Campaign {
   id: number;
   name: string;
   subject: string;
+  to: string;
+  cc?: string;
+  bcc?: string;
   status: string;
   sentCount: number;
   failedCount: number;

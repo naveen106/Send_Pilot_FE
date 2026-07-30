@@ -21,7 +21,7 @@ export default function ContactsPage() {
 
   useEffect(() => { load(); }, []);
 
-  async function handleAdd(e: React.FormEvent) {
+  async function handleAdd(e: { preventDefault(): void }) {
     e.preventDefault();
     try {
       await contactsApi.add(newEmail, newName || undefined);

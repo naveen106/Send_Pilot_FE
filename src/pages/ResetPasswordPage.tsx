@@ -13,7 +13,7 @@ export default function ResetPasswordPage() {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault();
     if (password !== confirm) { toast.error('Passwords do not match'); return; }
     if (!token) { toast.error('Invalid reset link'); return; }
