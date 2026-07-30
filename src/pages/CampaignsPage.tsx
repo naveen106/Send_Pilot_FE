@@ -5,28 +5,34 @@ import { Campaign } from '../types';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import {
-  Plus, Send, RefreshCw, X, Zap, Paperclip,
+  Plus, Send, RefreshCw, X, Zap, Paperclip, Trash2,
   ChevronDown, Clock, Shuffle, Zap as ZapIcon,
+  Users, FileText, Calendar, ChevronRight,
 } from 'lucide-react';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const STATUS_STYLES: Record<string, string> = {
-  DRAFT: 'bg-slate-500/15 text-slate-400 border-slate-500/20',
+  DRAFT:     'bg-slate-500/15 text-slate-400 border-slate-500/20',
   SCHEDULED: 'bg-amber-500/15 text-amber-400 border-amber-500/20',
-  RUNNING: 'bg-blue-500/15 text-blue-400 border-blue-500/20',
+  RUNNING:   'bg-blue-500/15 text-blue-400 border-blue-500/20',
   COMPLETED: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/20',
-  FAILED: 'bg-red-500/15 text-red-400 border-red-500/20',
-  PAUSED: 'bg-orange-500/15 text-orange-400 border-orange-500/20',
+  FAILED:    'bg-red-500/15 text-red-400 border-red-500/20',
+  PAUSED:    'bg-orange-500/15 text-orange-400 border-orange-500/20',
 };
 
 type SendMode = 'immediate' | 'scheduled' | 'interval';
 
 const SEND_MODES: { mode: SendMode; label: string; desc: string; icon: React.ElementType; color: string }[] = [
-  { mode: 'immediate', label: 'Send Now',        desc: 'Deliver to all recipients immediately',                          icon: ZapIcon, color: 'text-emerald-400' },
-  { mode: 'scheduled', label: 'Schedule Send',   desc: 'Start sending after a specific date & time',                    icon: Clock,   color: 'text-amber-400'  },
-  { mode: 'interval',  label: 'Interval Send',   desc: 'Send at random intervals within daily limit (anti-spam)',       icon: Shuffle, color: 'text-violet-400' },
+  { mode: 'immediate', label: 'Send Now',      desc: 'Deliver to all recipients immediately',                    icon: ZapIcon, color: 'text-emerald-400' },
+  { mode: 'scheduled', label: 'Schedule Send', desc: 'Start sending after a specific date & time',              icon: Clock,   color: 'text-amber-400'  },
+  { mode: 'interval',  label: 'Interval Send', desc: 'Send at random intervals within daily limit (anti-spam)', icon: Shuffle, color: 'text-violet-400' },
 ];
 
-const EMPTY_FORM = { name: '', to: '', subject: '', htmlContent: '' };
+const EMPTY_FORM = { name: '', subject: '', htmlContent: '' };
+
+function isValidEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
 
 export default function CampaignsPage() {
   const { hasRole } = useAuth();
@@ -35,22 +41,29 @@ export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
+  const [toInput, setToInput] = useState('');
+  const [toTags, setToTags] = useState<string[]>([]);
+  const [toError, setToError] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [selected, setSelected] = useState<Campaign | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Campaign | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const location = useLocation();
+  const toInputRef = useRef<HTMLInputElement>(null);
 
-  // pre-fill To from contacts page
+  // pre-fill recipients from contacts page
   useEffect(() => {
     const state = location.state as { prefillTo?: string } | null;
     if (state?.prefillTo) {
-      setForm((f) => ({ ...f, to: state.prefillTo! }));
+      const emails = state.prefillTo.split(',').map((e) => e.trim()).filter(isValidEmail);
+      setToTags(emails);
       setShowForm(true);
       window.history.replaceState({}, '');
     }
   }, []);
 
-  // send mode
   const [sendMode, setSendMode] = useState<SendMode>('immediate');
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
@@ -66,7 +79,14 @@ export default function CampaignsPage() {
 
   useEffect(() => { load(); }, []);
 
-  // close dropdown on outside click
+  // Poll every 20s while any campaign is RUNNING or SCHEDULED
+  useEffect(() => {
+    const hasActive = campaigns.some((c) => c.status === 'RUNNING' || c.status === 'SCHEDULED');
+    if (!hasActive) return;
+    const id = setInterval(load, 20000);
+    return () => clearInterval(id);
+  }, [campaigns]);
+
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) setShowModeMenu(false);
@@ -74,6 +94,33 @@ export default function CampaignsPage() {
     document.addEventListener('mousedown', handler);
     return () => document.removeEventListener('mousedown', handler);
   }, []);
+
+  // Commit the current toInput value as a tag
+  function commitToInput() {
+    const val = toInput.trim();
+    if (!val) return;
+    if (!isValidEmail(val)) { setToError('Invalid email address'); return; }
+    if (toTags.includes(val)) { setToError('Already added'); return; }
+    setToTags((p) => [...p, val]);
+    setToInput('');
+    setToError('');
+  }
+
+  function handleToKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.key === 'Enter' || e.key === ',' || e.key === 'Tab') {
+      e.preventDefault();
+      commitToInput();
+    } else if (e.key === 'Backspace' && toInput === '' && toTags.length > 0) {
+      setToTags((p) => p.slice(0, -1));
+      setToError('');
+    } else {
+      setToError('');
+    }
+  }
+
+  function removeTag(email: string) {
+    setToTags((p) => p.filter((t) => t !== email));
+  }
 
   function handleFiles(e: React.ChangeEvent<HTMLInputElement>) {
     setAttachments((prev) => [...prev, ...Array.from(e.target.files ?? [])]);
@@ -83,6 +130,9 @@ export default function CampaignsPage() {
   function closeForm() {
     setShowForm(false);
     setForm(EMPTY_FORM);
+    setToTags([]);
+    setToInput('');
+    setToError('');
     setAttachments([]);
     setSendMode('immediate');
     setScheduledAt('');
@@ -91,20 +141,40 @@ export default function CampaignsPage() {
 
   async function handleCreate(e: { preventDefault(): void }) {
     e.preventDefault();
+
+    // commit any pending input before submitting
+    const pending = toInput.trim();
+    let finalTags = toTags;
+    if (pending) {
+      if (!isValidEmail(pending)) { setToError('Invalid email address'); return; }
+      if (!toTags.includes(pending)) finalTags = [...toTags, pending];
+      setToTags(finalTags);
+      setToInput('');
+    }
+
+    if (finalTags.length === 0) {
+      setToError('Add at least one recipient');
+      toInputRef.current?.focus();
+      return;
+    }
+
     if (sendMode === 'scheduled' && !scheduledAt) {
       toast.error('Please pick a schedule date & time');
       return;
     }
+
     setSubmitting(true);
     try {
       await campaignsApi.create({
-        ...form,
+        name: form.name,
+        subject: form.subject,
+        htmlContent: form.htmlContent,
+        recipients: finalTags,
         scheduledAt: sendMode === 'scheduled' ? scheduledAt : undefined,
         sendMode,
-        attachments: attachments.length ? attachments : undefined,
-      } as any);
+      });
       toast.success(
-        sendMode === 'immediate' ? 'Campaign sent!' :
+        sendMode === 'immediate' ? 'Campaign queued!' :
         sendMode === 'scheduled' ? 'Campaign scheduled!' :
         'Interval campaign queued!'
       );
@@ -115,14 +185,28 @@ export default function CampaignsPage() {
     } finally { setSubmitting(false); }
   }
 
-  async function handleSend(id: number) {
-    try { await campaignsApi.sendNow(id); toast.success('Send initiated'); load(); }
-    catch (err: any) { toast.error(err.response?.data?.message || 'Failed'); }
-  }
-
-  async function handleRetry(id: number) {
+  async function handleRetry(e: React.MouseEvent, id: number) {
+    e.stopPropagation();
     try { await campaignsApi.retry(id); toast.success('Retry initiated'); load(); }
     catch { toast.error('Failed to retry'); }
+  }
+
+  function promptDelete(e: React.MouseEvent, campaign: Campaign) {
+    e.stopPropagation();
+    setDeleteTarget(campaign);
+  }
+
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
+    try {
+      await campaignsApi.remove(deleteTarget.id);
+      toast.success('Campaign deleted');
+      setCampaigns((p) => p.filter((c) => c.id !== deleteTarget.id));
+      setSelected((s) => s?.id === deleteTarget.id ? null : s);
+      setDeleteTarget(null);
+    } catch { toast.error('Failed to delete'); }
+    finally { setDeleting(false); }
   }
 
   const activeModeInfo = SEND_MODES.find((m) => m.mode === sendMode)!;
@@ -148,7 +232,6 @@ export default function CampaignsPage() {
       {/* Compose Form */}
       {showForm && (
         <div className="glass rounded-2xl border border-violet-500/20 mb-6 overflow-hidden">
-          {/* Header */}
           <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/[0.06] bg-gradient-to-r from-violet-600/10 to-transparent">
             <span className="text-sm font-semibold text-white flex items-center gap-2">
               <Send size={14} className="text-violet-400" /> New Campaign
@@ -168,13 +251,43 @@ export default function CampaignsPage() {
                 className="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-600 outline-none" />
             </div>
 
-            {/* To */}
-            <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-3">
-              <span className="text-[11px] text-slate-500 w-16 shrink-0 font-medium">To *</span>
-              <input required placeholder="recipient@example.com, another@example.com"
-                value={form.to} onChange={(e) => setForm({ ...form, to: e.target.value })}
-                className="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-600 outline-none" />
+            {/* To field — Gmail-style tag input */}
+            <div
+              className={`px-5 py-2.5 border-b flex items-start gap-3 cursor-text transition-colors ${toError ? 'border-red-500/30 bg-red-500/5' : 'border-white/[0.04]'}`}
+              onClick={() => toInputRef.current?.focus()}
+            >
+              <span className="text-[11px] text-slate-500 w-16 shrink-0 font-medium mt-1.5">To *</span>
+              <div className="flex-1 flex flex-wrap gap-1.5 min-h-[28px]">
+                {toTags.map((email) => (
+                  <span key={email}
+                    className="inline-flex items-center gap-1 bg-violet-500/15 border border-violet-500/25 text-violet-300 text-xs rounded-md px-2 py-0.5">
+                    {email}
+                    <button type="button" onClick={() => removeTag(email)}
+                      className="text-violet-400/60 hover:text-violet-300 transition-colors ml-0.5">
+                      <X size={10} />
+                    </button>
+                  </span>
+                ))}
+                <input
+                  ref={toInputRef}
+                  type="text"
+                  value={toInput}
+                  onChange={(e) => { setToInput(e.target.value); setToError(''); }}
+                  onKeyDown={handleToKeyDown}
+                  onBlur={commitToInput}
+                  placeholder={toTags.length === 0 ? 'Add recipients — press Enter, comma or Tab to add' : ''}
+                  className="bg-transparent text-sm text-slate-200 placeholder-slate-600 outline-none min-w-[200px] flex-1 py-0.5"
+                />
+              </div>
+              {toError && <span className="text-[11px] text-red-400 shrink-0 mt-1.5">{toError}</span>}
             </div>
+            {toTags.length > 0 && (
+              <div className="px-5 py-1.5 border-b border-white/[0.04] flex items-center gap-2">
+                <span className="text-[11px] text-slate-600">{toTags.length} recipient{toTags.length > 1 ? 's' : ''}</span>
+                <button type="button" onClick={() => setToTags([])}
+                  className="text-[11px] text-slate-700 hover:text-red-400 transition-colors">clear all</button>
+              </div>
+            )}
 
             {/* Subject */}
             <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-3">
@@ -209,7 +322,7 @@ export default function CampaignsPage() {
               </div>
             )}
 
-            {/* Send mode config panel */}
+            {/* Send mode panels */}
             {sendMode === 'scheduled' && (
               <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-3 bg-amber-500/5">
                 <Clock size={13} className="text-amber-400 shrink-0" />
@@ -220,7 +333,6 @@ export default function CampaignsPage() {
                 <span className="text-[11px] text-slate-600">Sending begins at this time and continues until all recipients are reached.</span>
               </div>
             )}
-
             {sendMode === 'interval' && (
               <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-3 bg-violet-500/5">
                 <Shuffle size={13} className="text-violet-400 shrink-0" />
@@ -230,16 +342,13 @@ export default function CampaignsPage() {
 
             {/* Footer toolbar */}
             <div className="px-5 py-3 flex items-center justify-between">
-              {/* Left: attach */}
               <button type="button" onClick={() => fileRef.current?.click()}
                 className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-violet-400 transition-colors">
                 <Paperclip size={13} /> Attach
               </button>
               <input ref={fileRef} type="file" multiple className="hidden" onChange={handleFiles} />
 
-              {/* Right: split send button */}
               <div className="flex items-center gap-0 relative" ref={menuRef}>
-                {/* Main action */}
                 <button type="submit" disabled={submitting}
                   className="btn-primary rounded-r-none border-r border-white/10 h-9">
                   {submitting
@@ -247,15 +356,11 @@ export default function CampaignsPage() {
                     : <activeModeInfo.icon size={14} className={activeModeInfo.color} />}
                   {activeModeInfo.label}
                 </button>
-
-                {/* Dropdown toggle */}
                 <button type="button" disabled={submitting}
                   onClick={() => setShowModeMenu((v) => !v)}
                   className="btn-primary rounded-l-none border-l-0 h-9 px-3">
                   <ChevronDown size={14} />
                 </button>
-
-                {/* Dropdown menu */}
                 {showModeMenu && (
                   <div className="absolute bottom-full right-0 mb-2 w-72 glass rounded-xl border border-white/[0.1] shadow-2xl overflow-hidden z-50">
                     {SEND_MODES.map(({ mode, label, desc, icon: Icon, color }) => (
@@ -297,35 +402,48 @@ export default function CampaignsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/[0.05]">
-                {['Name', 'Subject', 'To', 'Status', 'Sent', 'Failed', 'Scheduled', ''].map((h) => (
+                {['Name', 'Subject', 'Recipients', 'Status', 'Created', ''].map((h) => (
                   <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold text-slate-600 uppercase tracking-wider">{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
               {campaigns.map((c) => (
-                <tr key={c.id} className="table-row">
-                  <td className="px-5 py-3.5 font-medium text-slate-200 text-sm">{c.name}</td>
-                  <td className="px-5 py-3.5 text-slate-500 text-xs max-w-[140px] truncate">{c.subject}</td>
-                  <td className="px-5 py-3.5 text-slate-500 text-xs max-w-[160px] truncate">{c.to}</td>
+                <tr key={c.id} onClick={() => setSelected(c)}
+                  className="table-row cursor-pointer hover:bg-white/[0.03] transition-colors">
+                  <td className="px-5 py-3.5 font-medium text-slate-200 text-sm">
+                    <div className="flex items-center gap-1.5">
+                      {c.name}
+                      <ChevronRight size={12} className="text-slate-600" />
+                    </div>
+                  </td>
+                  <td className="px-5 py-3.5 text-slate-500 text-xs max-w-[160px] truncate">{c.subject}</td>
+                  <td className="px-5 py-3.5 text-slate-400 text-xs">
+                    {c.recipients.length === 0 ? (
+                      <span className="text-slate-700">—</span>
+                    ) : (
+                      <div className="flex flex-wrap gap-1 max-w-[220px]">
+                        {c.recipients.slice(0, 2).map((email) => (
+                          <span key={email} className="bg-white/5 border border-white/[0.08] rounded px-1.5 py-0.5 truncate max-w-[140px]">{email}</span>
+                        ))}
+                        {c.recipients.length > 2 && (
+                          <span className="text-slate-600 text-[11px] self-center">+{c.recipients.length - 2} more</span>
+                        )}
+                      </div>
+                    )}
+                  </td>
                   <td className="px-5 py-3.5">
                     <span className={`badge border ${STATUS_STYLES[c.status] ?? 'bg-slate-500/15 text-slate-400'}`}>{c.status}</span>
                   </td>
-                  <td className="px-5 py-3.5 text-emerald-400 font-medium text-sm">{c.sentCount}</td>
-                  <td className="px-5 py-3.5 text-red-400 font-medium text-sm">{c.failedCount}</td>
-                  <td className="px-5 py-3.5 text-slate-600 text-xs">{c.scheduledAt ? new Date(c.scheduledAt).toLocaleString() : '—'}</td>
+                  <td className="px-5 py-3.5 text-slate-600 text-xs whitespace-nowrap">
+                    {new Date(c.createdAt).toLocaleDateString()}
+                  </td>
                   <td className="px-5 py-3.5">
                     {isAdmin && (
-                      <div className="flex items-center gap-1">
-                        <button onClick={() => handleSend(c.id)} title="Send Now"
-                          className="w-7 h-7 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 flex items-center justify-center transition-colors">
-                          <Send size={13} />
-                        </button>
-                        <button onClick={() => handleRetry(c.id)} title="Retry Failed"
-                          className="w-7 h-7 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 flex items-center justify-center transition-colors">
-                          <RefreshCw size={13} />
-                        </button>
-                      </div>
+                      <button onClick={(e) => promptDelete(e, c)} title="Delete"
+                        className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition-colors">
+                        <Trash2 size={13} />
+                      </button>
                     )}
                   </td>
                 </tr>
@@ -334,6 +452,111 @@ export default function CampaignsPage() {
           </table>
         )}
       </div>
+
+      {/* Campaign Detail Modal */}
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelected(null)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col glass rounded-2xl border border-white/[0.1] shadow-2xl overflow-hidden"
+            onClick={(e) => e.stopPropagation()}>
+
+            <div className="flex items-start justify-between px-6 py-4 border-b border-white/[0.06] bg-gradient-to-r from-violet-600/10 to-transparent shrink-0">
+              <div>
+                <h2 className="text-base font-semibold text-white">{selected.name}</h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Created {new Date(selected.createdAt).toLocaleString()}
+                  {selected.user && <span className="ml-2">by {selected.user.name}</span>}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className={`badge border ${STATUS_STYLES[selected.status] ?? 'bg-slate-500/15 text-slate-400'}`}>
+                  {selected.status}
+                </span>
+                <button onClick={() => setSelected(null)}
+                  className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors ml-1">
+                  <X size={14} />
+                </button>
+              </div>
+            </div>
+
+            <div className="overflow-y-auto flex-1">
+              <div className="grid grid-cols-3 divide-x divide-white/[0.05] border-b border-white/[0.05]">
+                <div className="px-5 py-3.5 flex items-center gap-2.5">
+                  <FileText size={13} className="text-slate-500 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium">Subject</p>
+                    <p className="text-xs text-slate-300 mt-0.5 truncate max-w-[160px]">{selected.subject}</p>
+                  </div>
+                </div>
+                <div className="px-5 py-3.5 flex items-center gap-2.5">
+                  <Users size={13} className="text-slate-500 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium">Recipients</p>
+                    <p className="text-xs text-slate-300 mt-0.5">{selected.totalCount.toLocaleString()} contacts</p>
+                  </div>
+                </div>
+                <div className="px-5 py-3.5 flex items-center gap-2.5">
+                  <Calendar size={13} className="text-slate-500 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium">Scheduled</p>
+                    <p className="text-xs text-slate-300 mt-0.5">
+                      {selected.scheduledAt ? new Date(selected.scheduledAt).toLocaleString() : 'Immediate'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {selected.recipients.length > 0 && (
+                <div className="px-6 py-4 border-b border-white/[0.05]">
+                  <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
+                    To ({selected.recipients.length})
+                  </p>
+                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                    {selected.recipients.map((email) => (
+                      <span key={email} className="bg-violet-500/10 border border-violet-500/20 rounded-md px-2 py-0.5 text-xs text-violet-300">
+                        {email}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="px-6 py-4">
+                <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-3">Email Content</p>
+                <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
+                  {selected.htmlContent || <span className="text-slate-600">No content</span>}
+                </div>
+              </div>
+            </div>
+
+            {isAdmin && (
+              <div className="px-6 py-3.5 border-t border-white/[0.06] flex items-center justify-between shrink-0">
+                <button onClick={(e) => promptDelete(e, selected)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs transition-colors">
+                  <Trash2 size={12} /> Delete
+                </button>
+                <button onClick={(e) => { handleRetry(e, selected.id); setSelected(null); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs transition-colors">
+                  <RefreshCw size={12} /> Retry
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete campaign?"
+          message={<><span className="text-slate-200 font-medium">&ldquo;{deleteTarget.name}&rdquo;</span> will be permanently deleted. This action cannot be undone.</>}
+          confirmLabel="Yes, delete"
+          icon={<Trash2 size={18} className="text-red-400" />}
+          loading={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
+      )}
     </div>
   );
 }

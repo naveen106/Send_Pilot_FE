@@ -18,13 +18,13 @@ export interface Campaign {
   id: number;
   name: string;
   subject: string;
-  to: string;
+  htmlContent: string;
   status: string;
-  sentCount: number;
-  failedCount: number;
+  recipients: string[];
   totalCount: number;
   scheduledAt?: string;
   createdAt: string;
+  user?: { name: string; email: string };
 }
 
 export interface Contact {
@@ -42,10 +42,4 @@ export interface DashboardStats {
   totalCampaigns: number;
 }
 
-export interface AppLog {
-  id: number;
-  level: string;
-  message: string;
-  context?: string;
-  createdAt: string;
-}
+

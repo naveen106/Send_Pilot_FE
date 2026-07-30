@@ -4,6 +4,7 @@ import { contactsApi } from '../api';
 import { Contact } from '../types';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, Users, X, Upload, Send, FileSpreadsheet } from 'lucide-react';
+import ConfirmDialog from '../components/ConfirmDialog';
 
 const EMPTY_ROW = { email: '', name: '' };
 
@@ -20,6 +21,8 @@ export default function ContactsPage() {
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [importing, setImporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   // pre-select contacts passed from campaigns page
   useEffect(() => {
@@ -60,14 +63,17 @@ export default function ContactsPage() {
     } finally { setSubmitting(false); }
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm('Delete this contact?')) return;
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await contactsApi.remove(id);
-      toast.success('Deleted');
-      setSelected((p) => { const n = new Set(p); n.delete(id); return n; });
+      await contactsApi.remove(deleteTarget.id);
+      toast.success('Contact deleted');
+      setSelected((p) => { const n = new Set(p); n.delete(deleteTarget.id); return n; });
       load();
+      setDeleteTarget(null);
     } catch { toast.error('Failed to delete'); }
+    finally { setDeleting(false); }
   }
 
   // ── Checkboxes ────────────────────────────────────────────────────────────
@@ -94,7 +100,7 @@ export default function ContactsPage() {
     if (!importFile) { toast.error('Please select a file'); return; }
     setImporting(true);
     try {
-      const res = await contactsApi.importExcel(importFile);
+      const res = await contactsApi.import(importFile);
       toast.success(`Imported ${res.data.data.imported}, skipped ${res.data.data.skipped}`);
       setImportFile(null);
       load();
@@ -206,7 +212,7 @@ export default function ContactsPage() {
                       <td className="px-5 py-3.5 text-slate-500 text-sm">{c.name || '—'}</td>
                       <td className="px-5 py-3.5 text-slate-600 text-xs">{new Date(c.createdAt).toLocaleDateString()}</td>
                       <td className="px-5 py-3.5">
-                        <button onClick={() => handleDelete(c.id)}
+                        <button onClick={() => setDeleteTarget(c)}
                           className="w-7 h-7 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 flex items-center justify-center transition-colors">
                           <Trash2 size={13} />
                         </button>
@@ -271,6 +277,17 @@ export default function ContactsPage() {
             </button>
           </div>
         </div>
+      )}
+      {deleteTarget && (
+        <ConfirmDialog
+          title="Delete contact?"
+          message={<><span className="text-slate-200 font-medium">{deleteTarget.email}</span> will be permanently deleted. This action cannot be undone.</>}
+          confirmLabel="Yes, delete"
+          icon={<Trash2 size={18} className="text-red-400" />}
+          loading={deleting}
+          onConfirm={confirmDelete}
+          onCancel={() => setDeleteTarget(null)}
+        />
       )}
     </div>
   );

@@ -4,7 +4,7 @@ import { LayoutDashboard, Send, Users, LogOut, Mail, Upload } from 'lucide-react
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'USER', 'MANAGER'] },
-  { to: '/campaigns', label: 'Campaigns', icon: Send, roles: ['ADMIN', 'MANAGER'] },
+  { to: '/campaigns', label: 'Campaigns', icon: Send, roles: ['ADMIN', 'MANAGER', 'USER'] },
   { to: '/contacts', label: 'Contacts', icon: Users, roles: ['ADMIN', 'MANAGER'] },
   { to: '/imports', label: 'Import', icon: Upload, roles: ['ADMIN', 'MANAGER'] },
 ];
