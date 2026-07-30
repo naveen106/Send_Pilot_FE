@@ -70,22 +70,33 @@ export default function CampaignsPage() {
 
   const fileRef = useRef<HTMLInputElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   function load() {
     campaignsApi.getAll()
-      .then((r) => setCampaigns(r.data.data.campaigns))
+      .then((r) => {
+        const updated = r.data.data.campaigns;
+        setCampaigns(updated);
+
+      })
       .catch(() => toast.error('Failed to load campaigns'));
   }
 
   useEffect(() => { load(); }, []);
 
-  // Poll every 20s while any campaign is RUNNING or SCHEDULED
+  // Start polling whenever a campaign becomes active
   useEffect(() => {
-    const hasActive = campaigns.some((c) => c.status === 'RUNNING' || c.status === 'SCHEDULED');
-    if (!hasActive) return;
-    const id = setInterval(load, 20000);
-    return () => clearInterval(id);
-  }, [campaigns]);
+    const hasHot = campaigns.some((c) => c.status === 'RUNNING' || c.status === 'DRAFT');
+    const hasScheduled = campaigns.some((c) => c.status === 'SCHEDULED');
+    const interval = hasHot ? 5000 : hasScheduled ? 60000 : null;
+
+    if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    if (interval) pollRef.current = setInterval(load, interval);
+
+    return () => {
+      if (pollRef.current) { clearInterval(pollRef.current); pollRef.current = null; }
+    };
+  }, [campaigns.map((c) => c.status).join(',')]);
 
   useEffect(() => {
     function handler(e: MouseEvent) {
@@ -172,7 +183,7 @@ export default function CampaignsPage() {
         recipients: finalTags,
         scheduledAt: sendMode === 'scheduled' ? scheduledAt : undefined,
         sendMode,
-      });
+      }, attachments);
       toast.success(
         sendMode === 'immediate' ? 'Campaign queued!' :
         sendMode === 'scheduled' ? 'Campaign scheduled!' :
@@ -208,6 +219,9 @@ export default function CampaignsPage() {
     } catch { toast.error('Failed to delete'); }
     finally { setDeleting(false); }
   }
+
+  // Keep selected modal in sync with live campaign data
+  const selectedLive = selected ? (campaigns.find((c) => c.id === selected.id) ?? selected) : null;
 
   const activeModeInfo = SEND_MODES.find((m) => m.mode === sendMode)!;
 
@@ -453,8 +467,7 @@ export default function CampaignsPage() {
         )}
       </div>
 
-      {/* Campaign Detail Modal */}
-      {selected && (
+      {selectedLive && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
           onClick={() => setSelected(null)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -463,15 +476,15 @@ export default function CampaignsPage() {
 
             <div className="flex items-start justify-between px-6 py-4 border-b border-white/[0.06] bg-gradient-to-r from-violet-600/10 to-transparent shrink-0">
               <div>
-                <h2 className="text-base font-semibold text-white">{selected.name}</h2>
+                <h2 className="text-base font-semibold text-white">{selectedLive.name}</h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Created {new Date(selected.createdAt).toLocaleString()}
-                  {selected.user && <span className="ml-2">by {selected.user.name}</span>}
+                  Created {new Date(selectedLive.createdAt).toLocaleString()}
+                  {selectedLive.user && <span className="ml-2">by {selectedLive.user.name}</span>}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className={`badge border ${STATUS_STYLES[selected.status] ?? 'bg-slate-500/15 text-slate-400'}`}>
-                  {selected.status}
+                <span className={`badge border ${STATUS_STYLES[selectedLive.status] ?? 'bg-slate-500/15 text-slate-400'}`}>
+                  {selectedLive.status}
                 </span>
                 <button onClick={() => setSelected(null)}
                   className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors ml-1">
@@ -486,14 +499,14 @@ export default function CampaignsPage() {
                   <FileText size={13} className="text-slate-500 shrink-0" />
                   <div>
                     <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium">Subject</p>
-                    <p className="text-xs text-slate-300 mt-0.5 truncate max-w-[160px]">{selected.subject}</p>
+                    <p className="text-xs text-slate-300 mt-0.5 truncate max-w-[160px]">{selectedLive.subject}</p>
                   </div>
                 </div>
                 <div className="px-5 py-3.5 flex items-center gap-2.5">
                   <Users size={13} className="text-slate-500 shrink-0" />
                   <div>
                     <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium">Recipients</p>
-                    <p className="text-xs text-slate-300 mt-0.5">{selected.totalCount.toLocaleString()} contacts</p>
+                    <p className="text-xs text-slate-300 mt-0.5">{selectedLive.totalCount.toLocaleString()} contacts</p>
                   </div>
                 </div>
                 <div className="px-5 py-3.5 flex items-center gap-2.5">
@@ -501,19 +514,19 @@ export default function CampaignsPage() {
                   <div>
                     <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium">Scheduled</p>
                     <p className="text-xs text-slate-300 mt-0.5">
-                      {selected.scheduledAt ? new Date(selected.scheduledAt).toLocaleString() : 'Immediate'}
+                      {selectedLive.scheduledAt ? new Date(selectedLive.scheduledAt).toLocaleString() : 'Immediate'}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {selected.recipients.length > 0 && (
+              {selectedLive.recipients.length > 0 && (
                 <div className="px-6 py-4 border-b border-white/[0.05]">
                   <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
-                    To ({selected.recipients.length})
+                    To ({selectedLive.recipients.length})
                   </p>
                   <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                    {selected.recipients.map((email) => (
+                    {selectedLive.recipients.map((email) => (
                       <span key={email} className="bg-violet-500/10 border border-violet-500/20 rounded-md px-2 py-0.5 text-xs text-violet-300">
                         {email}
                       </span>
@@ -525,18 +538,18 @@ export default function CampaignsPage() {
               <div className="px-6 py-4">
                 <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-3">Email Content</p>
                 <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
-                  {selected.htmlContent || <span className="text-slate-600">No content</span>}
+                  {selectedLive.htmlContent || <span className="text-slate-600">No content</span>}
                 </div>
               </div>
             </div>
 
             {isAdmin && (
               <div className="px-6 py-3.5 border-t border-white/[0.06] flex items-center justify-between shrink-0">
-                <button onClick={(e) => promptDelete(e, selected)}
+                <button onClick={(e) => promptDelete(e, selectedLive)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs transition-colors">
                   <Trash2 size={12} /> Delete
                 </button>
-                <button onClick={(e) => { handleRetry(e, selected.id); setSelected(null); }}
+                <button onClick={(e) => { handleRetry(e, selectedLive.id); setSelected(null); }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs transition-colors">
                   <RefreshCw size={12} /> Retry
                 </button>
