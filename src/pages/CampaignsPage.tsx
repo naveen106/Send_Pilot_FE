@@ -10,6 +10,7 @@ import {
   Users, FileText, Calendar, ChevronRight,
 } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
+import { useSelection } from '../hooks/useSelection';
 
 const STATUS_STYLES: Record<string, string> = {
   DRAFT:     'bg-slate-500/15 text-slate-400 border-slate-500/20',
@@ -39,6 +40,7 @@ export default function CampaignsPage() {
   const isAdmin = hasRole('ADMIN');
 
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const { selected, toggle: toggleSelect, toggleAll, clear: clearSelected, allSelected, someSelected } = useSelection(campaigns);
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [toInput, setToInput] = useState('');
@@ -46,8 +48,8 @@ export default function CampaignsPage() {
   const [toError, setToError] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [selected, setSelected] = useState<Campaign | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Campaign | null>(null);
+  const [detailCampaign, setDetailCampaign] = useState<Campaign | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Campaign | 'bulk' | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   const location = useLocation();
@@ -211,24 +213,33 @@ export default function CampaignsPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await campaignsApi.remove(deleteTarget.id);
-      toast.success('Campaign deleted');
-      setCampaigns((p) => p.filter((c) => c.id !== deleteTarget.id));
-      setSelected((s) => s?.id === deleteTarget.id ? null : s);
+      if (deleteTarget === 'bulk') {
+        await campaignsApi.bulkRemove([...selected]);
+        const ids = [...selected];
+        toast.success(`${ids.length} campaigns deleted`);
+        setCampaigns((p) => p.filter((c) => !ids.includes(c.id)));
+        setDetailCampaign((s) => s && ids.includes(s.id) ? null : s);
+      } else {
+        await campaignsApi.remove(deleteTarget.id);
+        toast.success('Campaign deleted');
+        setCampaigns((p) => p.filter((c) => c.id !== deleteTarget.id));
+        setDetailCampaign((s) => s?.id === deleteTarget.id ? null : s);
+      }
+      clearSelected();
       setDeleteTarget(null);
     } catch { toast.error('Failed to delete'); }
     finally { setDeleting(false); }
   }
 
   // Keep selected modal in sync with live campaign data
-  const selectedLive = selected ? (campaigns.find((c) => c.id === selected.id) ?? selected) : null;
+  const selectedLive = detailCampaign ? (campaigns.find((c) => c.id === detailCampaign.id) ?? detailCampaign) : null;
 
   const activeModeInfo = SEND_MODES.find((m) => m.mode === sendMode)!;
 
   return (
     <div className="p-6 max-w-6xl">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Zap size={14} className="text-violet-400" />
@@ -236,11 +247,19 @@ export default function CampaignsPage() {
           </div>
           <h1 className="text-2xl font-bold text-white">Campaigns</h1>
         </div>
-        {isAdmin && (
-          <button onClick={() => setShowForm(true)} className="btn-primary">
-            <Plus size={15} /> New Campaign
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          {isAdmin && someSelected && (
+            <button onClick={() => setDeleteTarget('bulk')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-medium transition-colors">
+              <Trash2 size={13} /> Delete {selected.size}
+            </button>
+          )}
+          {isAdmin && (
+            <button onClick={() => setShowForm(true)} className="btn-primary">
+              <Plus size={15} /> New Campaign
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Compose Form */}
@@ -416,6 +435,12 @@ export default function CampaignsPage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-white/[0.05]">
+                {isAdmin && (
+                  <th className="px-5 py-3 w-10" onClick={toggleAll} style={{cursor:'pointer'}}>
+                    <input type="checkbox" checked={allSelected} onChange={() => {}}
+                      className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer pointer-events-none" />
+                  </th>
+                )}
                 {['Name', 'Subject', 'Recipients', 'Status', 'Created', ''].map((h) => (
                   <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold text-slate-600 uppercase tracking-wider">{h}</th>
                 ))}
@@ -423,8 +448,14 @@ export default function CampaignsPage() {
             </thead>
             <tbody>
               {campaigns.map((c) => (
-                <tr key={c.id} onClick={() => setSelected(c)}
-                  className="table-row cursor-pointer hover:bg-white/[0.03] transition-colors">
+                <tr key={c.id} onClick={() => setDetailCampaign(c)}
+                  className={`table-row cursor-pointer transition-colors ${selected.has(c.id) ? 'bg-violet-500/5' : 'hover:bg-white/[0.03]'}`}>
+                  {isAdmin && (
+                    <td className="px-5 py-3.5" onClick={(e) => { e.stopPropagation(); toggleSelect(c.id); }}>
+                      <input type="checkbox" checked={selected.has(c.id)} onChange={() => {}}
+                        className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer pointer-events-none" />
+                    </td>
+                  )}
                   <td className="px-5 py-3.5 font-medium text-slate-200 text-sm">
                     <div className="flex items-center gap-1.5">
                       {c.name}
@@ -469,7 +500,7 @@ export default function CampaignsPage() {
 
       {selectedLive && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
-          onClick={() => setSelected(null)}>
+          onClick={() => setDetailCampaign(null)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
           <div className="relative w-full max-w-2xl max-h-[85vh] flex flex-col glass rounded-2xl border border-white/[0.1] shadow-2xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}>
@@ -486,7 +517,7 @@ export default function CampaignsPage() {
                 <span className={`badge border ${STATUS_STYLES[selectedLive.status] ?? 'bg-slate-500/15 text-slate-400'}`}>
                   {selectedLive.status}
                 </span>
-                <button onClick={() => setSelected(null)}
+                <button onClick={() => setDetailCampaign(null)}
                   className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors ml-1">
                   <X size={14} />
                 </button>
@@ -549,7 +580,7 @@ export default function CampaignsPage() {
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs transition-colors">
                   <Trash2 size={12} /> Delete
                 </button>
-                <button onClick={(e) => { handleRetry(e, selectedLive.id); setSelected(null); }}
+                <button onClick={(e) => { handleRetry(e, selectedLive.id); setDetailCampaign(null); }}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs transition-colors">
                   <RefreshCw size={12} /> Retry
                 </button>
@@ -561,8 +592,10 @@ export default function CampaignsPage() {
 
       {deleteTarget && (
         <ConfirmDialog
-          title="Delete campaign?"
-          message={<><span className="text-slate-200 font-medium">&ldquo;{deleteTarget.name}&rdquo;</span> will be permanently deleted. This action cannot be undone.</>}
+          title={deleteTarget === 'bulk' ? `Delete ${selected.size} campaigns?` : 'Delete campaign?'}
+          message={deleteTarget === 'bulk'
+            ? <><span className="text-slate-200 font-medium">{selected.size} campaigns</span> will be permanently deleted. This action cannot be undone.</>
+            : <><span className="text-slate-200 font-medium">&ldquo;{deleteTarget.name}&rdquo;</span> will be permanently deleted. This action cannot be undone.</>}
           confirmLabel="Yes, delete"
           icon={<Trash2 size={18} className="text-red-400" />}
           loading={deleting}

@@ -40,6 +40,7 @@ export const campaignsApi = {
   sendNow: (id: number) => api.post(`/campaigns/${id}/send`),
   retry: (id: number) => api.post(`/campaigns/${id}/retry`),
   remove: (id: number) => api.delete(`/campaigns/${id}`),
+  bulkRemove: (ids: number[]) => api.delete('/campaigns', { data: { ids } }),
 };
 
 // Contacts
@@ -49,6 +50,7 @@ export const contactsApi = {
   add: (email: string, name?: string) => api.post('/contacts', { email, name }),
   update: (id: number, data: object) => api.put(`/contacts/${id}`, data),
   remove: (id: number) => api.delete(`/contacts/${id}`),
+  bulkRemove: (ids: number[]) => api.delete('/contacts', { data: { ids } }),
   import: (file: File) => {
     const form = new FormData();
     form.append('file', file);
