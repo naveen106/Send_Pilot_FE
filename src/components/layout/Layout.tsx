@@ -1,10 +1,12 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { LayoutDashboard, Send, LogOut, Mail } from 'lucide-react';
+import { LayoutDashboard, Send, Users, LogOut, Mail, Upload } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['ADMIN', 'USER', 'MANAGER'] },
   { to: '/campaigns', label: 'Campaigns', icon: Send, roles: ['ADMIN', 'MANAGER'] },
+  { to: '/contacts', label: 'Contacts', icon: Users, roles: ['ADMIN', 'MANAGER'] },
+  { to: '/imports', label: 'Import', icon: Upload, roles: ['ADMIN', 'MANAGER'] },
 ];
 
 export default function Layout() {
@@ -36,6 +38,7 @@ export default function Layout() {
               <NavLink
                 key={item.to}
                 to={item.to}
+                end
                 className={({ isActive }) =>
                   `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 ${
                     isActive
