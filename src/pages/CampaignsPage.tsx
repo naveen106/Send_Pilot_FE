@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { campaignsApi } from '../api';
 import { Campaign } from '../types';
 import { useAuth } from '../context/AuthContext';
 import toast from 'react-hot-toast';
 import {
   Plus, Send, RefreshCw, X, Zap, Paperclip,
-  ChevronDown, ChevronUp, Clock, Shuffle, Zap as ZapIcon,
+  ChevronDown, Clock, Shuffle, Zap as ZapIcon,
 } from 'lucide-react';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -25,7 +26,7 @@ const SEND_MODES: { mode: SendMode; label: string; desc: string; icon: React.Ele
   { mode: 'interval',  label: 'Interval Send',   desc: 'Send at random intervals within daily limit (anti-spam)',       icon: Shuffle, color: 'text-violet-400' },
 ];
 
-const EMPTY_FORM = { name: '', to: '', cc: '', bcc: '', subject: '', htmlContent: '' };
+const EMPTY_FORM = { name: '', to: '', subject: '', htmlContent: '' };
 
 export default function CampaignsPage() {
   const { hasRole } = useAuth();
@@ -35,8 +36,19 @@ export default function CampaignsPage() {
   const [showForm, setShowForm] = useState(false);
   const [form, setForm] = useState(EMPTY_FORM);
   const [attachments, setAttachments] = useState<File[]>([]);
-  const [showCcBcc, setShowCcBcc] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+
+  const location = useLocation();
+
+  // pre-fill To from contacts page
+  useEffect(() => {
+    const state = location.state as { prefillTo?: string } | null;
+    if (state?.prefillTo) {
+      setForm((f) => ({ ...f, to: state.prefillTo! }));
+      setShowForm(true);
+      window.history.replaceState({}, '');
+    }
+  }, []);
 
   // send mode
   const [sendMode, setSendMode] = useState<SendMode>('immediate');
@@ -72,7 +84,6 @@ export default function CampaignsPage() {
     setShowForm(false);
     setForm(EMPTY_FORM);
     setAttachments([]);
-    setShowCcBcc(false);
     setSendMode('immediate');
     setScheduledAt('');
     setShowModeMenu(false);
@@ -88,8 +99,6 @@ export default function CampaignsPage() {
     try {
       await campaignsApi.create({
         ...form,
-        cc: form.cc || undefined,
-        bcc: form.bcc || undefined,
         scheduledAt: sendMode === 'scheduled' ? scheduledAt : undefined,
         sendMode,
         attachments: attachments.length ? attachments : undefined,
@@ -165,28 +174,7 @@ export default function CampaignsPage() {
               <input required placeholder="recipient@example.com, another@example.com"
                 value={form.to} onChange={(e) => setForm({ ...form, to: e.target.value })}
                 className="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-600 outline-none" />
-              <button type="button" onClick={() => setShowCcBcc((v) => !v)}
-                className="text-[11px] text-slate-500 hover:text-violet-400 transition-colors flex items-center gap-1 shrink-0">
-                Cc/Bcc {showCcBcc ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-              </button>
             </div>
-
-            {showCcBcc && (
-              <>
-                <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-3">
-                  <span className="text-[11px] text-slate-500 w-16 shrink-0 font-medium">Cc</span>
-                  <input placeholder="cc@example.com" value={form.cc}
-                    onChange={(e) => setForm({ ...form, cc: e.target.value })}
-                    className="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-600 outline-none" />
-                </div>
-                <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-3">
-                  <span className="text-[11px] text-slate-500 w-16 shrink-0 font-medium">Bcc</span>
-                  <input placeholder="bcc@example.com" value={form.bcc}
-                    onChange={(e) => setForm({ ...form, bcc: e.target.value })}
-                    className="flex-1 bg-transparent text-sm text-slate-200 placeholder-slate-600 outline-none" />
-                </div>
-              </>
-            )}
 
             {/* Subject */}
             <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-3">

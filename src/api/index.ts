@@ -32,17 +32,16 @@ export const campaignsApi = {
   getAll: (page = 1, limit = 10) => api.get(`/campaigns?page=${page}&limit=${limit}`),
   getOne: (id: number) => api.get(`/campaigns/${id}`),
   create: (data: {
-    name: string; subject: string; to: string; cc?: string; bcc?: string;
-    htmlContent: string; scheduledAt?: string; attachments?: File[];
+    name: string; subject: string; to: string;
+    htmlContent: string; scheduledAt?: string; sendMode?: string; attachments?: File[];
   }) => {
     const form = new FormData();
     form.append('name', data.name);
     form.append('subject', data.subject);
     form.append('to', data.to);
-    if (data.cc) form.append('cc', data.cc);
-    if (data.bcc) form.append('bcc', data.bcc);
     form.append('htmlContent', data.htmlContent);
     if (data.scheduledAt) form.append('scheduledAt', data.scheduledAt);
+    if (data.sendMode) form.append('sendMode', data.sendMode);
     data.attachments?.forEach((f) => form.append('attachments', f));
     return api.post('/campaigns', form);
   },
@@ -58,6 +57,11 @@ export const contactsApi = {
   update: (id: number, data: object) => api.put(`/contacts/${id}`, data),
   remove: (id: number) => api.delete(`/contacts/${id}`),
   importCSV: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/contacts/import', form);
+  },
+  importExcel: (file: File) => {
     const form = new FormData();
     form.append('file', file);
     return api.post('/contacts/import', form);
