@@ -26,7 +26,7 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="mb-8">
         <PageHeader icon={TrendingUp} label="Overview" title="Dashboard" />
-        <p className="text-slate-500 text-sm -mt-4">Monitor your email campaigns at a glance.</p>
+        <p className="text-slate-500 text-sm mt-1">Monitor your email campaigns at a glance.</p>
       </div>
 
       {/* Stats Grid */}
