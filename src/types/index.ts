@@ -1,5 +1,8 @@
 export type Role = 'ADMIN' | 'USER' | 'MANAGER';
 
+/** Campaign send strategy — controls how emails are dispatched. */
+export type SendMode = 'immediate' | 'scheduled' | 'interval';
+
 export interface User {
   id: number;
   email: string;
@@ -24,7 +27,11 @@ export interface Campaign {
   totalCount: number;
   scheduledAt?: string;
   createdAt: string;
-  user?: { name: string; email: string };
+  updatedAt: string;
+  createdBy: number | null;                    // null when the creator was deleted
+  sendMode?: string;
+  attachments?: { filename: string; content: string; contentType: string }[];
+  user?: { name: string; email: string } | null; // null when creator was deleted
 }
 
 export interface Contact {

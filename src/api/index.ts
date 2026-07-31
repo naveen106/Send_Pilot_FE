@@ -31,7 +31,7 @@ export const campaignsApi = {
     form.append('name', data.name);
     form.append('subject', data.subject);
     form.append('htmlContent', data.htmlContent);
-    data.recipients.forEach((r) => form.append('recipients[]', r));
+    data.recipients.forEach((r) => form.append('recipients', r));
     if (data.scheduledAt) form.append('scheduledAt', data.scheduledAt);
     if (data.sendMode) form.append('sendMode', data.sendMode);
     attachments.forEach((f) => form.append('attachments', f));
@@ -45,8 +45,8 @@ export const campaignsApi = {
 
 // Contacts
 export const contactsApi = {
-  getAll: (page = 1, search?: string) =>
-    api.get(`/contacts?page=${page}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
+  getAll: (page = 1, limit = 50, search?: string) =>
+    api.get(`/contacts?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
   add: (email: string, name?: string) => api.post('/contacts', { email, name }),
   update: (id: number, data: object) => api.put(`/contacts/${id}`, data),
   remove: (id: number) => api.delete(`/contacts/${id}`),

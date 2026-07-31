@@ -3,6 +3,7 @@ import { dashboardApi } from '../api';
 import { DashboardStats } from '../types';
 import { Mail, Send, Calendar, BarChart3, TrendingUp, ArrowUpRight } from 'lucide-react';
 import toast from 'react-hot-toast';
+import PageHeader from '../components/PageHeader';
 
 const cards = [
   { key: 'totalEmails', label: 'Total Emails', icon: Mail, gradient: 'from-violet-600/20 to-violet-600/5', border: 'border-violet-500/20', icon_bg: 'bg-violet-500/20', icon_color: 'text-violet-400' },
@@ -24,12 +25,8 @@ export default function DashboardPage() {
     <div className="p-6 max-w-5xl">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center gap-2 mb-1">
-          <TrendingUp size={16} className="text-violet-400" />
-          <span className="text-xs text-violet-400 font-medium uppercase tracking-wider">Overview</span>
-        </div>
-        <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-        <p className="text-slate-500 text-sm mt-1">Monitor your email campaigns at a glance.</p>
+        <PageHeader icon={TrendingUp} label="Overview" title="Dashboard" />
+        <p className="text-slate-500 text-sm -mt-4">Monitor your email campaigns at a glance.</p>
       </div>
 
       {/* Stats Grid */}

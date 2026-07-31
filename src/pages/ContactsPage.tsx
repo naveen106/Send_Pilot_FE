@@ -5,6 +5,8 @@ import { Contact } from '../types';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, Users, X, Upload, Send, FileSpreadsheet } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
+import EmptyState from '../components/EmptyState';
+import PageHeader from '../components/PageHeader';
 import { useSelection } from '../hooks/useSelection';
 
 const EMPTY_ROW = { email: '', name: '' };
@@ -24,14 +26,6 @@ export default function ContactsPage() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Contact | 'bulk' | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  // pre-select contacts passed from campaigns page
-  useEffect(() => {
-    const state = location.state as { selectedEmails?: string[] } | null;
-    if (state?.selectedEmails?.length) {
-      // will match after contacts load
-    }
-  }, []);
 
   function load() {
     contactsApi.getAll().then((r) => {
@@ -110,14 +104,11 @@ export default function ContactsPage() {
   return (
     <div className="p-6 max-w-4xl">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-1">
-        <Users size={14} className="text-violet-400" />
-        <span className="text-xs text-violet-400 font-medium uppercase tracking-wider">Contact List</span>
-      </div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">
-          Contacts <span className="text-slate-600 text-lg font-normal ml-1">{total.toLocaleString()}</span>
-        </h1>
+        <div>
+          <PageHeader icon={Users} label="Contact List" title="Contacts" />
+          <span className="text-slate-600 text-sm font-normal -mt-1 block">{total.toLocaleString()} total</span>
+        </div>
         {someSelected && (
           <div className="flex items-center gap-2">
             <button onClick={() => setDeleteTarget('bulk')}
@@ -182,18 +173,12 @@ export default function ContactsPage() {
               <span className="text-xs text-slate-600">{contacts.length} shown</span>
             </div>
             {contacts.length === 0 ? (
-              <div className="py-16 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-3">
-                  <Users size={20} className="text-slate-600" />
-                </div>
-                <p className="text-slate-500 text-sm">No contacts yet</p>
-                <p className="text-slate-700 text-xs mt-1">Add contacts using the form above</p>
-              </div>
+              <EmptyState icon={Users} message="No contacts yet" hint="Add contacts using the form above" />
             ) : (
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.05]">
-                    <th className="px-5 py-3 w-10" onClick={toggleAll} style={{cursor:'pointer'}}>
+                    <th className="px-5 py-3 w-10 cursor-pointer" onClick={toggleAll}>
                       <input type="checkbox" checked={allSelected} onChange={() => {}}
                         className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer pointer-events-none" />
                     </th>
