@@ -45,7 +45,7 @@ export default function CampaignTable({
                     className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer pointer-events-none" />
                 </th>
               )}
-              {['Name', 'Subject', 'Recipients', 'Status', 'Created', ''].map((h) => (
+              {['Name', 'Subject', 'Recipients', 'Created', 'Status', ''].map((h) => (
                 <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold text-slate-600 uppercase tracking-wider">{h}</th>
               ))}
             </tr>
@@ -84,10 +84,10 @@ export default function CampaignTable({
                     </div>
                   )}
                 </td>
-                <td className="px-5 py-3.5"><StatusBadge status={c.status} /></td>
                 <td className="px-5 py-3.5 text-slate-600 text-xs whitespace-nowrap">
                   {new Date(c.createdAt).toLocaleDateString()}
                 </td>
+                <td className="px-5 py-3.5"><StatusBadge status={c.status} /></td>
                 {/* Delete button — stopPropagation prevents the row click from firing */}
                 <td className="px-5 py-3.5">
                   {isAdmin && (
