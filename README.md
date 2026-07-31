@@ -81,29 +81,39 @@ npm run preview
 ```
 src/
 ├── api/
-│   ├── client.ts        # Axios instance with auth interceptors
-│   ├── index.ts         # All API endpoint functions
-│   └── mockAuth.ts      # Mock auth fallback (used when backend is down)
+│   ├── client.ts        # Axios instance — baseURL from VITE_API_URL, JWT interceptor, 401 redirect
+│   ├── index.ts         # All API endpoint functions (authApi, campaignsApi, contactsApi, dashboardApi)
+│   └── mockAuth.ts      # In-memory mock users; activated automatically on 5xx/no-response
 ├── components/
-│   └── layout/
-│       ├── Layout.tsx         # Sidebar + main content shell
-│       └── ProtectedRoute.tsx # Auth & role guard wrapper
+│   ├── campaigns/
+│   │   ├── ComposeForm.tsx         # New campaign compose panel (form, tag input, attachments, send mode)
+│   │   ├── CampaignTable.tsx       # Campaign list table with multi-select and delete
+│   │   ├── CampaignDetailModal.tsx # Full-screen campaign detail overlay with retry/delete
+│   │   └── SendModeMenu.tsx        # Split-button dropdown for immediate/scheduled/interval mode
+│   ├── layout/
+│   │   ├── Layout.tsx              # Sidebar + <Outlet> shell; nav filtered by role
+│   │   └── ProtectedRoute.tsx      # Auth guard + optional role guard; redirects to /login or /dashboard
+│   ├── ConfirmDialog.tsx           # Reusable destructive-action modal
+│   ├── EmptyState.tsx              # Centered empty-state block (icon, message, hint)
+│   ├── PageHeader.tsx              # Two-line page header (icon, label, title)
+│   └── StatusBadge.tsx             # Campaign status pill badge with color mapping
 ├── context/
-│   └── AuthContext.tsx  # Auth state, login, logout, role helpers
+│   └── AuthContext.tsx  # Auth state (user, token), login/logout/register/forgotPassword/resetPassword, hasRole()
+├── hooks/
+│   ├── useClickOutside.ts  # Calls handler on mousedown outside a ref — closes dropdowns/menus
+│   ├── usePolling.ts       # Runs a callback on interval while active; clears on cleanup
+│   └── useSelection.ts     # Multi-select state (toggle, toggleAll, clear, allSelected, someSelected)
 ├── pages/
-│   ├── LoginPage.tsx
-│   ├── DashboardPage.tsx
-│   ├── CampaignsPage.tsx
-│   ├── ContactsPage.tsx
-│   ├── UsersPage.tsx
-│   ├── SmtpPage.tsx
-│   ├── SchedulerPage.tsx
-│   └── AppLogsPage.tsx
+│   ├── LoginPage.tsx           # Email + password sign-in form
+│   ├── DashboardPage.tsx       # Stats grid (totalEmails, sentToday, scheduledCampaigns, totalCampaigns)
+│   ├── CampaignsPage.tsx       # Campaign list, compose form, send-mode picker, detail modal, delete confirm
+│   ├── ContactsPage.tsx        # Contact list + add form (tab: contacts) / CSV-XLSX import (tab: imports)
+│   └── ResetPasswordPage.tsx   # Token-based password reset form
 ├── types/
-│   └── index.ts         # Shared TypeScript types
-├── App.tsx              # Routes definition
-├── main.tsx             # Entry point
-└── index.css            # Tailwind + global styles
+│   └── index.ts         # Shared TS types: Role, SendMode, User, AuthState, Campaign, Contact, DashboardStats
+├── App.tsx              # BrowserRouter + route tree + Toaster config
+├── index.css            # Tailwind directives + @layer components (glass, btn-primary, btn-ghost, badge, input-field, table-row)
+└── main.tsx             # ReactDOM.createRoot entry point
 ```
 
 ---
