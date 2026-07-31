@@ -12,14 +12,10 @@ import CampaignTable from '../components/campaigns/CampaignTable';
 import CampaignDetailModal from '../components/campaigns/CampaignDetailModal';
 import { usePolling } from '../hooks/usePolling';
 import { useSelection } from '../hooks/useSelection';
+import { extractEmails, hasEmail } from '../utils/email';
 
 // Default empty state for the compose form fields
 const EMPTY_FORM = { name: '', subject: '', htmlContent: '' };
-
-// Validates a basic email format before adding it as a recipient tag
-function isValidEmail(v: string) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
-}
 
 export default function CampaignsPage() {
   const { hasRole } = useAuth();
@@ -59,7 +55,7 @@ export default function CampaignsPage() {
   useEffect(() => {
     const state = location.state as { prefillTo?: string } | null;
     if (state?.prefillTo) {
-      setToTags(state.prefillTo.split(',').map((e) => e.trim()).filter(isValidEmail));
+      setToTags(extractEmails(state.prefillTo));
       setShowForm(true);
       // Clear router state so a refresh doesn't re-trigger this
       window.history.replaceState({}, '');
@@ -82,13 +78,33 @@ export default function CampaignsPage() {
   usePolling(load, 5000, hasHot);
   usePolling(load, 60000, !hasHot && hasScheduled);
 
-  // Commits the current text in the recipient input as a validated email tag
+  // Extracts all valid emails from pasted text (handles comma/space/semicolon/newline separators)
+  function handleToPaste(e: React.ClipboardEvent<HTMLInputElement>) {
+    const text = e.clipboardData.getData('text');
+    const extracted = extractEmails(text);
+    if (!extracted.length) return;
+    e.preventDefault();
+    setToTags((p) => [...p, ...extracted.filter((em) => !hasEmail(p, em))]);
+    setToError('');
+  }
+
+  // Commits the current text in the recipient input as one or more validated email tags.
+  // Accepts free-form multi-email text, not only a single clean address.
   function commitToInput() {
     const val = toInput.trim();
     if (!val) return;
-    if (!isValidEmail(val)) { setToError('Invalid email address'); return; }
-    if (toTags.includes(val)) { setToError('Already added'); return; }
-    setToTags((p) => [...p, val]);
+    const extracted = extractEmails(val);
+    if (!extracted.length) {
+      setToError('No valid email addresses found');
+      return;
+    }
+    const fresh = extracted.filter((em) => !hasEmail(toTags, em));
+    if (!fresh.length) {
+      setToError('Already added');
+      setToInput('');
+      return;
+    }
+    setToTags((p) => [...p, ...fresh]);
     setToInput('');
     setToError('');
   }
@@ -124,12 +140,19 @@ export default function CampaignsPage() {
   async function handleCreate(e: { preventDefault(): void }) {
     e.preventDefault();
 
-    // Commit any email still typed but not yet tagged before submitting
+    // Commit any emails still typed but not yet tagged before submitting
     const pending = toInput.trim();
     let finalTags = toTags;
     if (pending) {
-      if (!isValidEmail(pending)) { setToError('Invalid email address'); return; }
-      if (!toTags.includes(pending)) finalTags = [...toTags, pending];
+      const extracted = extractEmails(pending);
+      if (!extracted.length) {
+        setToError('No valid email addresses found');
+        return;
+      }
+      finalTags = [...toTags];
+      for (const em of extracted) {
+        if (!hasEmail(finalTags, em)) finalTags.push(em);
+      }
       setToTags(finalTags);
       setToInput('');
     }
@@ -236,6 +259,7 @@ export default function CampaignsPage() {
           onFormChange={(field, value) => setForm((p) => ({ ...p, [field]: value }))}
           onToInputChange={(v) => { setToInput(v); setToError(''); }}
           onToKeyDown={handleToKeyDown}
+          onToPaste={handleToPaste}
           onToBlur={commitToInput}
           onRemoveTag={(email) => setToTags((p) => p.filter((t) => t !== email))}
           onClearTags={() => setToTags([])}

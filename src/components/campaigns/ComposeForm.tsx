@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import { Send, X, Paperclip, Clock, Shuffle } from 'lucide-react';
 import { SendMode } from '../../types';
 import SendModeMenu from './SendModeMenu';
@@ -16,6 +16,7 @@ interface Props {
   onFormChange: (field: string, value: string) => void;
   onToInputChange: (value: string) => void;
   onToKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
+  onToPaste: (e: React.ClipboardEvent<HTMLInputElement>) => void;
   onToBlur: () => void;
   onRemoveTag: (email: string) => void;
   onClearTags: () => void;
@@ -33,7 +34,7 @@ interface Props {
 export default function ComposeForm({
   form, toInput, toTags, toError, attachments, submitting,
   sendMode, showModeMenu, scheduledAt,
-  onFormChange, onToInputChange, onToKeyDown, onToBlur,
+  onFormChange, onToInputChange, onToKeyDown, onToPaste, onToBlur,
   onRemoveTag, onClearTags, onFilesChange, onRemoveAttachment,
   onSendModeSelect, onToggleModeMenu, onCloseModeMenu,
   onScheduledAtChange, onSubmit, onClose,
@@ -42,6 +43,12 @@ export default function ComposeForm({
   const toInputRef = useRef<HTMLInputElement>(null);
   // Hidden file input triggered by the "Attach" button
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // How many chips to show before collapsing — keeps the row compact with large lists
+  const CHIP_LIMIT = 5;
+  const [showAllTags, setShowAllTags] = useState(false);
+  const visibleTags = showAllTags ? toTags : toTags.slice(0, CHIP_LIMIT);
+  const hiddenCount = toTags.length - CHIP_LIMIT;
 
   return (
     <div className="glass rounded-2xl border border-violet-500/20 mb-6 overflow-hidden">
@@ -74,8 +81,8 @@ export default function ComposeForm({
         >
           <span className="text-[11px] text-slate-500 w-16 shrink-0 font-medium mt-1.5">To *</span>
           <div className="flex-1 flex flex-wrap gap-1.5 min-h-[28px]">
-            {/* Render each committed email as a removable chip */}
-            {toTags.map((email) => (
+            {/* Render each committed email as a removable chip, collapsed beyond CHIP_LIMIT */}
+            {visibleTags.map((email) => (
               <span key={email}
                 className="inline-flex items-center gap-1 bg-violet-500/15 border border-violet-500/25 text-violet-300 text-xs rounded-md px-2 py-0.5">
                 {email}
@@ -85,6 +92,19 @@ export default function ComposeForm({
                 </button>
               </span>
             ))}
+            {/* Collapse toggle — shown when there are hidden chips */}
+            {!showAllTags && hiddenCount > 0 && (
+              <button type="button" onClick={() => setShowAllTags(true)}
+                className="inline-flex items-center text-[11px] text-violet-400/70 hover:text-violet-300 bg-violet-500/10 border border-violet-500/20 rounded-md px-2 py-0.5 transition-colors">
+                +{hiddenCount} more
+              </button>
+            )}
+            {showAllTags && toTags.length > CHIP_LIMIT && (
+              <button type="button" onClick={() => setShowAllTags(false)}
+                className="inline-flex items-center text-[11px] text-slate-500 hover:text-slate-300 bg-white/5 border border-white/[0.08] rounded-md px-2 py-0.5 transition-colors">
+                show less
+              </button>
+            )}
             {/* Live text input — commits on Enter, comma, Tab, or blur */}
             <input
               ref={toInputRef}
@@ -93,6 +113,7 @@ export default function ComposeForm({
               onChange={(e) => onToInputChange(e.target.value)}
               onKeyDown={onToKeyDown}
               onBlur={onToBlur}
+              onPaste={onToPaste}
               placeholder={toTags.length === 0 ? 'Add recipients — press Enter, comma or Tab to add' : ''}
               className="bg-transparent text-sm text-slate-200 placeholder-slate-600 outline-none min-w-[200px] flex-1 py-0.5"
             />

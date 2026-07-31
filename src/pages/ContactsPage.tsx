@@ -8,6 +8,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import EmptyState from '../components/EmptyState';
 import PageHeader from '../components/PageHeader';
 import { useSelection } from '../hooks/useSelection';
+import { isValidEmail } from '../utils/email';
 
 const EMPTY_ROW = { email: '', name: '' };
 
@@ -45,11 +46,17 @@ export default function ContactsPage() {
 
   async function handleSubmit(e: { preventDefault(): void }) {
     e.preventDefault();
-    const valid = rows.filter((r) => r.email.trim());
-    if (!valid.length) { toast.error('Add at least one email'); return; }
+    const filled = rows.filter((r) => r.email.trim());
+    if (!filled.length) { toast.error('Add at least one email'); return; }
+    const invalid = filled.find((r) => !isValidEmail(r.email));
+    if (invalid) {
+      toast.error(`Invalid email address: ${invalid.email.trim()}`);
+      return;
+    }
+    const valid = filled.map((r) => ({ email: r.email.trim(), name: r.name.trim() }));
     setSubmitting(true);
     try {
-      await Promise.all(valid.map((r) => contactsApi.add(r.email.trim(), r.name.trim() || undefined)));
+      await Promise.all(valid.map((r) => contactsApi.add(r.email, r.name || undefined)));
       toast.success(`${valid.length} contact${valid.length > 1 ? 's' : ''} added`);
       setRows([{ ...EMPTY_ROW }]);
       load();
@@ -135,18 +142,18 @@ export default function ContactsPage() {
             <form onSubmit={handleSubmit}>
               <div className="px-5 pt-3 pb-1 flex items-center gap-3">
                 <span className="text-[11px] text-slate-600 font-medium w-8 shrink-0">#</span>
-                <span className="text-[11px] text-slate-600 font-medium flex-1">Email *</span>
                 <span className="text-[11px] text-slate-600 font-medium flex-1">Name (optional)</span>
+                <span className="text-[11px] text-slate-600 font-medium flex-1">Email *</span>
                 <span className="w-6 shrink-0" />
               </div>
               <div className="px-5 pb-3 space-y-2">
                 {rows.map((row, i) => (
                   <div key={i} className="flex items-center gap-3">
                     <span className="text-[11px] text-slate-600 w-8 shrink-0 text-center">{i + 1}</span>
-                    <input type="email" required placeholder="email@example.com" value={row.email}
-                      onChange={(e) => updateRow(i, 'email', e.target.value)} className="input-field flex-1" />
                     <input type="text" placeholder="John Doe" value={row.name}
                       onChange={(e) => updateRow(i, 'name', e.target.value)} className="input-field flex-1" />
+                    <input type="email" required placeholder="email@example.com" value={row.email}
+                      onChange={(e) => updateRow(i, 'email', e.target.value)} className="input-field flex-1" />
                     <button type="button" onClick={() => removeRow(i)} disabled={rows.length === 1}
                       className="w-6 h-6 flex items-center justify-center text-slate-600 hover:text-red-400 transition-colors disabled:opacity-20 shrink-0">
                       <X size={13} />
@@ -182,7 +189,7 @@ export default function ContactsPage() {
                       <input type="checkbox" checked={allSelected} onChange={() => {}}
                         className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer pointer-events-none" />
                     </th>
-                    {['Email', 'Name', 'Added', ''].map((h) => (
+                    {['Name', 'Email', 'Added', ''].map((h) => (
                       <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold text-slate-600 uppercase tracking-wider">{h}</th>
                     ))}
                   </tr>
@@ -194,8 +201,8 @@ export default function ContactsPage() {
                         <input type="checkbox" checked={selected.has(c.id)} onChange={() => {}}
                           className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer pointer-events-none" />
                       </td>
+                      <td className="px-5 py-3.5 text-slate-200 text-sm font-medium">{c.name || '—'}</td>
                       <td className="px-5 py-3.5 text-slate-200 text-sm font-medium">{c.email}</td>
-                      <td className="px-5 py-3.5 text-slate-500 text-sm">{c.name || '—'}</td>
                       <td className="px-5 py-3.5 text-slate-600 text-xs">{new Date(c.createdAt).toLocaleDateString()}</td>
                       <td className="px-5 py-3.5">
                         <button onClick={() => setDeleteTarget(c)}

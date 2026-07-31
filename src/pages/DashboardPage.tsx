@@ -37,11 +37,11 @@ export default function DashboardPage() {
               <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
                 <ArrowUpRight size={14} className="text-slate-500" />
               </div>
-              <div className={`w-9 h-9 rounded-xl ${icon_bg} flex items-center justify-center mb-4`}>
+              <div className={`w-9 h-9 rounded-xl ${icon_bg} flex items-center justify-center mb-3`}>
                 <Icon size={17} className={icon_color} />
               </div>
+              <p className="text-xs text-slate-500 mb-1">{label}</p>
               <p className="text-2xl font-bold text-white">{stats[key].toLocaleString()}</p>
-              <p className="text-xs text-slate-500 mt-1">{label}</p>
             </div>
           ))}
         </div>
