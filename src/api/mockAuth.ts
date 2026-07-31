@@ -40,7 +40,6 @@ const users: MockUser[] = [
 let nextId = 4;
 
 function makeToken(user: MockUser): string {
-  // Simple base64 "token" — replace with real JWT when backend is ready
   return btoa(JSON.stringify({ userId: user.id, email: user.email, role: user.role }));
 }
 
@@ -85,7 +84,7 @@ export function mockForgotPassword(email: string): string {
   const token = Math.random().toString(36).slice(2, 10).toUpperCase();
   found.resetToken = token;
 
-  // In a real app this would send an email — we just return it for demo
+  // In offline mode this token is returned for demo; real backend sends it via email
   return token;
 }
 

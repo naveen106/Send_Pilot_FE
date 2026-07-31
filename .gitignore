@@ -21,7 +21,7 @@ npm-debug.log*
 *.ntvs*
 *.njsproj
 *.sln
-
+.amazonq/
 # OS
 .DS_Store
 Thumbs.db

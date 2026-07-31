@@ -5,6 +5,9 @@ import { Contact } from '../types';
 import toast from 'react-hot-toast';
 import { Plus, Trash2, Users, X, Upload, Send, FileSpreadsheet } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
+import EmptyState from '../components/EmptyState';
+import PageHeader from '../components/PageHeader';
+import { useSelection } from '../hooks/useSelection';
 
 const EMPTY_ROW = { email: '', name: '' };
 
@@ -18,19 +21,11 @@ export default function ContactsPage() {
   const [total, setTotal] = useState(0);
   const [rows, setRows] = useState([{ ...EMPTY_ROW }]);
   const [submitting, setSubmitting] = useState(false);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const { selected, toggle: toggleSelect, toggleAll, clear: clearSelected, allSelected, someSelected } = useSelection(contacts);
   const [importing, setImporting] = useState(false);
   const [importFile, setImportFile] = useState<File | null>(null);
-  const [deleteTarget, setDeleteTarget] = useState<Contact | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Contact | 'bulk' | null>(null);
   const [deleting, setDeleting] = useState(false);
-
-  // pre-select contacts passed from campaigns page
-  useEffect(() => {
-    const state = location.state as { selectedEmails?: string[] } | null;
-    if (state?.selectedEmails?.length) {
-      // will match after contacts load
-    }
-  }, []);
 
   function load() {
     contactsApi.getAll().then((r) => {
@@ -67,22 +62,18 @@ export default function ContactsPage() {
     if (!deleteTarget) return;
     setDeleting(true);
     try {
-      await contactsApi.remove(deleteTarget.id);
-      toast.success('Contact deleted');
-      setSelected((p) => { const n = new Set(p); n.delete(deleteTarget.id); return n; });
+      if (deleteTarget === 'bulk') {
+        await contactsApi.bulkRemove([...selected]);
+        toast.success(`${selected.size} contacts deleted`);
+      } else {
+        await contactsApi.remove(deleteTarget.id);
+        toast.success('Contact deleted');
+      }
+      clearSelected();
       load();
       setDeleteTarget(null);
     } catch { toast.error('Failed to delete'); }
     finally { setDeleting(false); }
-  }
-
-  // ── Checkboxes ────────────────────────────────────────────────────────────
-  function toggleSelect(id: number) {
-    setSelected((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  }
-
-  function toggleAll() {
-    setSelected(selected.size === contacts.length ? new Set() : new Set(contacts.map((c) => c.id)));
   }
 
   function handleSendCampaign() {
@@ -113,18 +104,21 @@ export default function ContactsPage() {
   return (
     <div className="p-6 max-w-4xl">
       {/* Header */}
-      <div className="flex items-center gap-2 mb-1">
-        <Users size={14} className="text-violet-400" />
-        <span className="text-xs text-violet-400 font-medium uppercase tracking-wider">Contact List</span>
-      </div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white">
-          Contacts <span className="text-slate-600 text-lg font-normal ml-1">{total.toLocaleString()}</span>
-        </h1>
-        {selected.size > 0 && (
-          <button onClick={handleSendCampaign} className="btn-primary">
-            <Send size={14} /> Send Campaign to {selected.size} contact{selected.size > 1 ? 's' : ''}
-          </button>
+        <div>
+          <PageHeader icon={Users} label="Contact List" title="Contacts" />
+          <span className="text-slate-600 text-sm font-normal -mt-1 block">{total.toLocaleString()} total</span>
+        </div>
+        {someSelected && (
+          <div className="flex items-center gap-2">
+            <button onClick={() => setDeleteTarget('bulk')}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-red-400 text-xs font-medium transition-colors">
+              <Trash2 size={13} /> Delete {selected.size}
+            </button>
+            <button onClick={handleSendCampaign} className="btn-primary">
+              <Send size={14} /> Send Campaign to {selected.size}
+            </button>
+          </div>
         )}
       </div>
 
@@ -179,22 +173,14 @@ export default function ContactsPage() {
               <span className="text-xs text-slate-600">{contacts.length} shown</span>
             </div>
             {contacts.length === 0 ? (
-              <div className="py-16 text-center">
-                <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mx-auto mb-3">
-                  <Users size={20} className="text-slate-600" />
-                </div>
-                <p className="text-slate-500 text-sm">No contacts yet</p>
-                <p className="text-slate-700 text-xs mt-1">Add contacts using the form above</p>
-              </div>
+              <EmptyState icon={Users} message="No contacts yet" hint="Add contacts using the form above" />
             ) : (
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-white/[0.05]">
-                    <th className="px-5 py-3 w-10">
-                      <input type="checkbox"
-                        checked={selected.size === contacts.length && contacts.length > 0}
-                        onChange={toggleAll}
-                        className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer" />
+                    <th className="px-5 py-3 w-10 cursor-pointer" onClick={toggleAll}>
+                      <input type="checkbox" checked={allSelected} onChange={() => {}}
+                        className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer pointer-events-none" />
                     </th>
                     {['Email', 'Name', 'Added', ''].map((h) => (
                       <th key={h} className="px-5 py-3 text-left text-[11px] font-semibold text-slate-600 uppercase tracking-wider">{h}</th>
@@ -204,9 +190,9 @@ export default function ContactsPage() {
                 <tbody>
                   {contacts.map((c) => (
                     <tr key={c.id} className={`table-row ${selected.has(c.id) ? 'bg-violet-500/5' : ''}`}>
-                      <td className="px-5 py-3.5">
-                        <input type="checkbox" checked={selected.has(c.id)} onChange={() => toggleSelect(c.id)}
-                          className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer" />
+                      <td className="px-5 py-3.5" onClick={() => toggleSelect(c.id)}>
+                        <input type="checkbox" checked={selected.has(c.id)} onChange={() => {}}
+                          className="w-3.5 h-3.5 rounded accent-violet-500 cursor-pointer pointer-events-none" />
                       </td>
                       <td className="px-5 py-3.5 text-slate-200 text-sm font-medium">{c.email}</td>
                       <td className="px-5 py-3.5 text-slate-500 text-sm">{c.name || '—'}</td>
@@ -280,8 +266,10 @@ export default function ContactsPage() {
       )}
       {deleteTarget && (
         <ConfirmDialog
-          title="Delete contact?"
-          message={<><span className="text-slate-200 font-medium">{deleteTarget.email}</span> will be permanently deleted. This action cannot be undone.</>}
+          title={deleteTarget === 'bulk' ? `Delete ${selected.size} contacts?` : 'Delete contact?'}
+          message={deleteTarget === 'bulk'
+            ? <><span className="text-slate-200 font-medium">{selected.size} contacts</span> will be permanently deleted. This action cannot be undone.</>
+            : <><span className="text-slate-200 font-medium">{deleteTarget.email}</span> will be permanently deleted. This action cannot be undone.</>}
           confirmLabel="Yes, delete"
           icon={<Trash2 size={18} className="text-red-400" />}
           loading={deleting}
