@@ -22,7 +22,10 @@ export const dashboardApi = {
 
 // Campaigns
 export const campaignsApi = {
-  getAll: (page = 1, limit = 10) => api.get(`/campaigns?page=${page}&limit=${limit}`),
+  // Optional search is sent to the backend so pagination applies to matching
+  // campaigns, rather than filtering only the campaigns already in memory.
+  getAll: (page = 1, limit = 10, search = '') =>
+    api.get(`/campaigns?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
   getOne: (id: number) => api.get(`/campaigns/${id}`),
   create: (data: {
     name: string; subject: string; htmlContent: string; recipients: string[]; scheduledAt?: string; sendMode?: string;
@@ -54,9 +57,10 @@ export const contactsApi = {
   update: (id: number, data: object) => api.put(`/contacts/${id}`, data),
   remove: (id: number) => api.delete(`/contacts/${id}`),
   bulkRemove: (ids: number[]) => api.delete('/contacts', { data: { ids } }),
-  import: (file: File) => {
+  import: (file: File, campaignIds: number[] = []) => {
     const form = new FormData();
     form.append('file', file);
+    if (campaignIds.length) form.append('campaignIds', JSON.stringify(campaignIds));
     return api.post('/contacts/import', form);
   },
   deduplicate: () => api.post('/contacts/deduplicate'),

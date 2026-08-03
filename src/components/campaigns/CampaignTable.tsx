@@ -5,6 +5,7 @@ import EmptyState from '../EmptyState';
 
 interface Props {
   campaigns: Campaign[];
+  totalCount: number;
   isAdmin: boolean;
   selected: Set<number>;
   allSelected: boolean;
@@ -16,7 +17,7 @@ interface Props {
 
 /** Table listing all campaigns with optional multi-select and delete. */
 export default function CampaignTable({
-  campaigns, isAdmin, selected, allSelected,
+  campaigns, totalCount, isAdmin, selected, allSelected,
   onToggleAll, onToggleSelect, onRowClick, onDelete,
 }: Props) {
   return (
@@ -24,7 +25,7 @@ export default function CampaignTable({
       {/* Table header bar: title on the left, total count on the right */}
       <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
         <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">All Campaigns</span>
-        <span className="text-xs text-slate-600">{campaigns.length} total</span>
+        <span className="text-xs text-slate-600">{totalCount.toLocaleString()} total</span>
       </div>
 
       {/* Empty state — shown when there are no campaigns yet */}

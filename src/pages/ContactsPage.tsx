@@ -10,13 +10,16 @@ import PageHeader from '../components/PageHeader';
 import AssignCampaignsModal from '../components/AssignCampaignsModal';
 import { useSelection } from '../hooks/useSelection';
 import { isValidEmail } from '../utils/email';
+import Pagination from '../components/Pagination';
 
 const EMPTY_ROW = { email: '', name: '' };
+const PAGE_SIZE = 15;
 
 export default function ContactsPage() {
   const navigate = useNavigate();
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
   const [rows, setRows] = useState([{ ...EMPTY_ROW }]);
   const [submitting, setSubmitting] = useState(false);
   const { selected, toggle: toggleSelect, toggleAll, clear: clearSelected, allSelected, someSelected } = useSelection(contacts);
@@ -24,14 +27,19 @@ export default function ContactsPage() {
   const [deleting, setDeleting] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
 
-  function load() {
-    contactsApi.getAll().then((r) => {
-      setContacts(r.data.data.contacts);
-      setTotal(r.data.data.total);
+  function load(requestedPage = page) {
+    contactsApi.getAll(requestedPage, PAGE_SIZE).then((r) => {
+      const data = r.data.data;
+      if (requestedPage > 1 && data.contacts.length === 0) {
+        setPage(requestedPage - 1);
+        return;
+      }
+      setContacts(data.contacts);
+      setTotal(data.total);
     }).catch(() => toast.error('Failed to load contacts'));
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(page); }, [page]);
 
   // ── Add contacts ──────────────────────────────────────────────────────────
   function addRow() { setRows((p) => [...p, { ...EMPTY_ROW }]); }
@@ -198,6 +206,8 @@ export default function ContactsPage() {
               </table>
             )}
           </div>
+          <Pagination page={page} total={total} pageSize={PAGE_SIZE}
+            onPageChange={(nextPage) => { clearSelected(); setPage(nextPage); }} />
       </>
 
       {/* ── IMPORT TAB ── */}

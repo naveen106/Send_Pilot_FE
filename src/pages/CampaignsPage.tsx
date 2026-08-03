@@ -13,9 +13,12 @@ import CampaignDetailModal from '../components/campaigns/CampaignDetailModal';
 import { usePolling } from '../hooks/usePolling';
 import { useSelection } from '../hooks/useSelection';
 import { extractEmails, hasEmail } from '../utils/email';
+import CampaignSearchDropdown from '../components/CampaignSearchDropdown';
+import Pagination from '../components/Pagination';
 
 // Default empty state for the compose form fields
 const EMPTY_FORM = { name: '', subject: '', htmlContent: '' };
+const PAGE_SIZE = 15;
 
 export default function CampaignsPage() {
   const { hasRole } = useAuth();
@@ -23,6 +26,8 @@ export default function CampaignsPage() {
 
   // --- Campaign list state ---
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalCampaigns, setTotalCampaigns] = useState(0);
   // Multi-select state for bulk delete — tracks selected campaign IDs
   const { selected, toggle: toggleSelect, toggleAll, clear: clearSelected, allSelected, someSelected } = useSelection(campaigns);
 
@@ -71,13 +76,21 @@ export default function CampaignsPage() {
   }, []);
 
   // Fetches the full campaign list from the API
-  function load() {
-    campaignsApi.getAll()
-      .then((r) => setCampaigns(r.data.data.campaigns))
+  function load(requestedPage = page) {
+    campaignsApi.getAll(requestedPage, PAGE_SIZE)
+      .then((r) => {
+        const data = r.data.data;
+        if (requestedPage > 1 && data.campaigns.length === 0) {
+          setPage(requestedPage - 1);
+          return;
+        }
+        setCampaigns(data.campaigns);
+        setTotalCampaigns(data.total);
+      })
       .catch(() => toast.error('Failed to load campaigns'));
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(page); }, [page]);
 
   // Poll every 5 s while any campaign is RUNNING or DRAFT (actively changing)
   // Poll every 60 s while campaigns are only SCHEDULED (waiting for their start time)
@@ -220,6 +233,7 @@ export default function CampaignsPage() {
         setCampaigns((p) => p.filter((c) => c.id !== deleteTarget.id));
         setDetailCampaign((s) => s?.id === deleteTarget.id ? null : s);
       }
+      load(page);
       clearSelected();
       setDeleteTarget(null);
     } catch { toast.error('Failed to delete'); }
@@ -282,9 +296,15 @@ export default function CampaignsPage() {
         />
       )}
 
+      {/* Full-width server-backed search placed immediately above the table. */}
+      <div className="mb-4">
+        <CampaignSearchDropdown onSelect={setDetailCampaign} />
+      </div>
+
       {/* Campaign list table with checkboxes, status badges, and row click to open detail */}
       <CampaignTable
         campaigns={campaigns}
+        totalCount={totalCampaigns}
         isAdmin={isAdmin}
         selected={selected}
         allSelected={allSelected}
@@ -293,6 +313,8 @@ export default function CampaignsPage() {
         onRowClick={setDetailCampaign}
         onDelete={promptDelete}
       />
+      <Pagination page={page} total={totalCampaigns} pageSize={PAGE_SIZE}
+        onPageChange={(nextPage) => { clearSelected(); setPage(nextPage); }} />
 
       {/* Detail modal — opens when a table row is clicked; stays in sync with live poll data */}
       {selectedLive && (
