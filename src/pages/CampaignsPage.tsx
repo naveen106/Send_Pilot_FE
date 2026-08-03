@@ -13,6 +13,7 @@ import CampaignDetailModal from '../components/campaigns/CampaignDetailModal';
 import { usePolling } from '../hooks/usePolling';
 import { useSelection } from '../hooks/useSelection';
 import { extractEmails, hasEmail } from '../utils/email';
+import CampaignSearchDropdown from '../components/CampaignSearchDropdown';
 
 // Default empty state for the compose form fields
 const EMPTY_FORM = { name: '', subject: '', htmlContent: '' };
@@ -281,6 +282,11 @@ export default function CampaignsPage() {
           onClose={closeForm}
         />
       )}
+
+      {/* Full-width server-backed search placed immediately above the table. */}
+      <div className="mb-4">
+        <CampaignSearchDropdown onSelect={setDetailCampaign} />
+      </div>
 
       {/* Campaign list table with checkboxes, status badges, and row click to open detail */}
       <CampaignTable

@@ -22,7 +22,10 @@ export const dashboardApi = {
 
 // Campaigns
 export const campaignsApi = {
-  getAll: (page = 1, limit = 10) => api.get(`/campaigns?page=${page}&limit=${limit}`),
+  // Optional search is sent to the backend so pagination applies to matching
+  // campaigns, rather than filtering only the campaigns already in memory.
+  getAll: (page = 1, limit = 10, search = '') =>
+    api.get(`/campaigns?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
   getOne: (id: number) => api.get(`/campaigns/${id}`),
   create: (data: {
     name: string; subject: string; htmlContent: string; recipients: string[]; scheduledAt?: string; sendMode?: string;
