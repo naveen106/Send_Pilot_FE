@@ -1,17 +1,21 @@
-import { X, FileText, Users, Calendar, Paperclip, Trash2, RefreshCw } from 'lucide-react';
+import { X, FileText, Users, Calendar, Paperclip, Trash2, RefreshCw, Send } from 'lucide-react';
 import { Campaign } from '../../types';
 import StatusBadge from '../StatusBadge';
 
 interface Props {
   campaign: Campaign;
   isAdmin: boolean;
+  canSend: boolean;
   onClose: () => void;
   onDelete: (e: React.MouseEvent, campaign: Campaign) => void;
   onRetry: (e: React.MouseEvent, id: number) => void;
+  onSend: (campaign: Campaign) => void;
 }
 
 /** Full-screen overlay showing campaign details with delete and retry actions. */
-export default function CampaignDetailModal({ campaign, isAdmin, onClose, onDelete, onRetry }: Props) {
+export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClose, onDelete, onRetry, onSend }: Props) {
+  const assignedRecipients = campaign.assignedCampaigns ?? [];
+  const sentDeliveries = campaign.sentDeliveries ?? [];
   return (
     // Clicking the backdrop closes the modal
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -67,33 +71,34 @@ export default function CampaignDetailModal({ campaign, isAdmin, onClose, onDele
             </div>
           </div>
 
-          {/* Full recipient list as violet chips — only shown when recipients exist */}
-          {campaign.recipients.length > 0 && (
-            <div className="px-6 py-4 border-b border-white/[0.05]">
-              <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
-                Sent To ({campaign.recipients.length})
-              </p>
-              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                {campaign.recipients.map((email) => (
-                  <span key={email} className="bg-violet-500/10 border border-violet-500/20 rounded-md px-2 py-0.5 text-xs text-violet-300">
-                    {email}
-                  </span>
-                ))}
-              </div>
+          {/* Durable delivery history; this is distinct from pending assignments. */}
+          <div className="px-6 py-4 border-b border-white/[0.05]">
+            <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
+              Sent To ({sentDeliveries.length})
+            </p>
+            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+              {sentDeliveries.map((delivery) => (
+                <span key={delivery.id} title={new Date(delivery.sentAt).toLocaleString()}
+                  className="bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-0.5 text-xs text-emerald-300">
+                  {delivery.email}
+                </span>
+              ))}
+              {sentDeliveries.length === 0 && <span className="text-xs text-slate-600">No emails sent yet.</span>}
             </div>
-          )}
+          </div>
 
 {/* Full assigned contacts list- only shown when they exist */}
           <div className="px-6 py-4 border-b border-white/[0.05]">
            <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
-                Assigned To ({campaign.assignedCampaigns.length})
+                Assigned To ({assignedRecipients.length})
             </p>
               <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                {campaign.assignedCampaigns.map((assigned) => (
+                {assignedRecipients.map((assigned) => (
                   <span key={assigned.contacts.id} className="bg-violet-500/10 border border-violet-500/20 rounded-md px-2 py-0.5 text-xs text-violet-300">
                     {assigned.contacts.email}
                   </span>
                 ))}
+                {assignedRecipients.length === 0 && <span className="text-xs text-slate-600">No contacts are assigned to this campaign.</span>}
               </div>
             </div>
           
@@ -125,17 +130,29 @@ export default function CampaignDetailModal({ campaign, isAdmin, onClose, onDele
         </div>
 
         {/* Footer action bar — delete on the left, retry on the right; admin-only */}
-        {isAdmin && (
+        {(isAdmin || (canSend && assignedRecipients.length > 0)) && (
           <div className="px-6 py-3.5 border-t border-white/[0.06] flex items-center justify-between shrink-0">
-            <button onClick={(e) => onDelete(e, campaign)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs transition-colors">
-              <Trash2 size={12} /> Delete
-            </button>
-            {/* Retry closes the modal immediately so the user can see the status update in the table */}
-            <button onClick={(e) => { onRetry(e, campaign.id); onClose(); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs transition-colors">
-              <RefreshCw size={12} /> Retry
-            </button>
+            <div className="flex items-center gap-2">
+              {isAdmin && <>
+                <button onClick={(e) => onDelete(e, campaign)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs transition-colors">
+                  <Trash2 size={12} /> Delete
+                </button>
+                {/* Retry is kept beside Delete so destructive/recovery actions stay together. */}
+                <button onClick={(e) => { onRetry(e, campaign.id); onClose(); }}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs transition-colors">
+                  <RefreshCw size={12} /> Retry
+                </button>
+              </>}
+            </div>
+            <div className="flex items-center gap-2">
+              {canSend && assignedRecipients.length > 0 && (
+                <button onClick={() => onSend(campaign)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-xs transition-colors">
+                  <Send size={12} /> Send assigned
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>

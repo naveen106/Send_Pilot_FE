@@ -40,7 +40,8 @@ export const campaignsApi = {
     attachments.forEach((f) => form.append('attachments', f));
     return api.post('/campaigns', form);
   },
-  sendNow: (id: number) => api.post(`/campaigns/${id}/send`),
+  sendNow: (id: number, options: { sendMode?: string; scheduledAt?: string } = {}) =>
+    api.post(`/campaigns/${id}/send`, options),
   retry: (id: number) => api.post(`/campaigns/${id}/retry`),
   /** Merge contact emails into existing campaign recipient lists. */
   assign: (campaignIds: number[], emails: string[]) =>
