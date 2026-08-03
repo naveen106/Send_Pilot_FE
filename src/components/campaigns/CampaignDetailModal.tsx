@@ -71,7 +71,7 @@ export default function CampaignDetailModal({ campaign, isAdmin, onClose, onDele
           {campaign.recipients.length > 0 && (
             <div className="px-6 py-4 border-b border-white/[0.05]">
               <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
-                To ({campaign.recipients.length})
+                Sent To ({campaign.recipients.length})
               </p>
               <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
                 {campaign.recipients.map((email) => (
@@ -83,6 +83,20 @@ export default function CampaignDetailModal({ campaign, isAdmin, onClose, onDele
             </div>
           )}
 
+{/* Full assigned contacts list- only shown when they exist */}
+          <div className="px-6 py-4 border-b border-white/[0.05]">
+           <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
+                Assigned To ({campaign.assignedCampaigns.length})
+            </p>
+              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                {campaign.assignedCampaigns.map((assigned) => (
+                  <span key={assigned.contacts.id} className="bg-violet-500/10 border border-violet-500/20 rounded-md px-2 py-0.5 text-xs text-violet-300">
+                    {assigned.contacts.email}
+                  </span>
+                ))}
+              </div>
+            </div>
+          
           {/* Attachment list — only shown when the campaign has files */}
           {campaign.attachments && campaign.attachments.length > 0 && (
             <div className="px-6 py-4 border-b border-white/[0.05]">
