@@ -32,6 +32,7 @@ export interface Campaign {
   sendMode?: string;
   attachments?: { filename: string; content: string; contentType: string }[];
   user?: { name: string; email: string } | null; // null when creator was deleted
+  assignedCampaigns: { id: number; contactId: number; contacts: Contact; campaignId: number; campaign: Campaign }[];
 }
 
 export interface Contact {
@@ -47,6 +48,14 @@ export interface DashboardStats {
   sentToday: number;
   scheduledCampaigns: number;
   totalCampaigns: number;
+}
+
+export interface assignedCampaigns {
+  id: number;
+  contactId: number;
+  contacts: Contact;
+  campaignId: number;
+  campaign: Campaign;
 }
 
 
