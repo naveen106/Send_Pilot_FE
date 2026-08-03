@@ -53,9 +53,17 @@ export default function CampaignsPage() {
 
   // If navigated from ContactsPage with pre-selected emails, open the form pre-filled
   useEffect(() => {
-    const state = location.state as { prefillTo?: string } | null;
-    if (state?.prefillTo) {
-      setToTags(extractEmails(state.prefillTo));
+    const state = location.state as { prefillTo?: string; prefillCampaign?: Partial<Campaign> } | null;
+    if (state?.prefillTo || state?.prefillCampaign) {
+      if (state.prefillTo) setToTags(extractEmails(state.prefillTo));
+      const prefillCampaign = state.prefillCampaign;
+      if (prefillCampaign) {
+        setForm((prev) => ({
+          name: prefillCampaign.name ?? prev.name,
+          subject: prefillCampaign.subject ?? prev.subject,
+          htmlContent: prefillCampaign.htmlContent ?? prev.htmlContent,
+        }));
+      }
       setShowForm(true);
       // Clear router state so a refresh doesn't re-trigger this
       window.history.replaceState({}, '');

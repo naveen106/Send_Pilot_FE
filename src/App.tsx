@@ -7,6 +7,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import CampaignsPage from './pages/CampaignsPage';
 import ContactsPage from './pages/ContactsPage';
+import ImportPage from './pages/ImportPage';
 
 export default function App() {
   return (
@@ -26,7 +27,7 @@ export default function App() {
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="campaigns" element={<ProtectedRoute roles={['ADMIN', 'MANAGER']}><CampaignsPage /></ProtectedRoute>} />
             <Route path="contacts" element={<ProtectedRoute roles={['ADMIN', 'MANAGER']}><ContactsPage /></ProtectedRoute>} />
-            <Route path="imports" element={<ProtectedRoute roles={['ADMIN', 'MANAGER']}><ContactsPage /></ProtectedRoute>} />
+            <Route path="imports" element={<ProtectedRoute roles={['ADMIN', 'MANAGER']}><ImportPage /></ProtectedRoute>} />
           </Route>
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
