@@ -58,6 +58,7 @@ export default function CampaignsPage() {
   const [scheduledAt, setScheduledAt] = useState('');
   const [sendTarget, setSendTarget] = useState<Campaign | null>(null);
   const [sending, setSending] = useState(false);
+  const [activeSendCampaignId, setActiveSendCampaignId] = useState<number | null>(null);
 
   const location = useLocation();
 
@@ -91,6 +92,16 @@ export default function CampaignsPage() {
         }
         setCampaigns(data.campaigns);
         setTotalCampaigns(data.total);
+
+        // Search can open a campaign that is not present on the current page.
+        // Refresh that selected campaign directly so its pending assignments
+        // and delivery history still update while interval sending runs.
+        const selectedId = detailCampaign?.id;
+        if (selectedId && !data.campaigns.some((campaign: Campaign) => campaign.id === selectedId)) {
+          campaignsApi.getOne(selectedId)
+            .then((response) => setDetailCampaign(response.data.data))
+            .catch(() => { /* The list refresh remains usable if the detail request fails. */ });
+        }
       })
       .catch(() => toast.error('Failed to load campaigns'));
   }
@@ -99,7 +110,8 @@ export default function CampaignsPage() {
 
   // Poll every 5 s while any campaign is RUNNING or DRAFT (actively changing)
   // Poll every 60 s while campaigns are only SCHEDULED (waiting for their start time)
-  const hasHot = campaigns.some((c) => c.status === 'RUNNING' || c.status === 'DRAFT');
+  const hasHot = campaigns.some((c) => c.status === 'RUNNING' || c.status === 'DRAFT')
+    || activeSendCampaignId !== null;
   const hasScheduled = campaigns.some((c) => c.status === 'SCHEDULED');
   usePolling(load, 5000, hasHot);
   usePolling(load, 60000, !hasHot && hasScheduled);
@@ -222,18 +234,38 @@ export default function CampaignsPage() {
     setSendTarget(campaign);
   }
 
+  function closeDetail() {
+    setDetailCampaign(null);
+    setActiveSendCampaignId(null);
+  }
+
   async function confirmSend(sendMode: SendMode, scheduledAt?: string) {
     if (!sendTarget) return;
     setSending(true);
     try {
       await campaignsApi.sendNow(sendTarget.id, { sendMode, scheduledAt });
+      // Start polling immediately even when the campaign was previously
+      // COMPLETED/FAILED and therefore was not considered "hot" by the page.
+      // The backend updates assignment rows and delivery history after each
+      // interval email; polling then keeps both modal lists in sync.
+      setCampaigns((current) => current.map((campaign) => campaign.id === sendTarget.id
+        ? {
+            ...campaign,
+            status: sendMode === 'scheduled' ? 'SCHEDULED' : 'RUNNING',
+            scheduledAt: sendMode === 'scheduled' ? scheduledAt : campaign.scheduledAt,
+          }
+        : campaign
+      ));
+      setActiveSendCampaignId(sendTarget.id);
       toast.success(
         sendMode === 'scheduled' ? 'Assigned campaign scheduled!' :
         sendMode === 'interval' ? 'Assigned campaign queued with interval sending!' :
         `Campaign queued for ${getAssignedRecipients(sendTarget).length} assigned contact(s)`
       );
       setSendTarget(null);
-      load();
+      // Do not immediately reload here: the background worker may not have
+      // changed the persisted status yet. The optimistic RUNNING/SCHEDULED
+      // state above keeps polling active until the server reflects progress.
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to send campaign');
     } finally {
@@ -355,7 +387,7 @@ export default function CampaignsPage() {
           campaign={selectedLive}
           isAdmin={isAdmin}
           canSend={canSend}
-          onClose={() => setDetailCampaign(null)}
+          onClose={closeDetail}
           onDelete={promptDelete}
           onRetry={handleRetry}
           onSend={promptSend}
