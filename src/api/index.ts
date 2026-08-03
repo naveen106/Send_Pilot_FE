@@ -39,6 +39,9 @@ export const campaignsApi = {
   },
   sendNow: (id: number) => api.post(`/campaigns/${id}/send`),
   retry: (id: number) => api.post(`/campaigns/${id}/retry`),
+  /** Merge contact emails into existing campaign recipient lists. */
+  assign: (campaignIds: number[], emails: string[]) =>
+    api.post('/campaigns/assign', { campaignIds, emails }),
   remove: (id: number) => api.delete(`/campaigns/${id}`),
   bulkRemove: (ids: number[]) => api.delete('/campaigns', { data: { ids } }),
 };
