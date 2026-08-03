@@ -11,6 +11,7 @@ import AssignCampaignsModal from '../components/AssignCampaignsModal';
 import { useSelection } from '../hooks/useSelection';
 import { isValidEmail } from '../utils/email';
 import Pagination from '../components/Pagination';
+import ContactSearchDropdown from '../components/ContactSearchDropdown';
 
 const EMPTY_ROW = { email: '', name: '' };
 const PAGE_SIZE = 15;
@@ -164,6 +165,9 @@ export default function ContactsPage() {
           </div>
 
           {/* Contacts table */}
+          <div className="mb-4">
+            <ContactSearchDropdown selectedIds={selected} onToggle={toggleSelect} />
+          </div>
           <div className="glass rounded-2xl overflow-hidden">
             <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
               <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">All Contacts</span>
