@@ -15,6 +15,8 @@ import { useSelection } from '../hooks/useSelection';
 import { extractEmails, hasEmail } from '../utils/email';
 import CampaignSearchDropdown from '../components/CampaignSearchDropdown';
 import Pagination from '../components/Pagination';
+import SendAssignedCampaignDialog from '../components/campaigns/SendAssignedCampaignDialog';
+import { getAssignedRecipients } from '../utils/campaign';
 
 // Default empty state for the compose form fields
 const EMPTY_FORM = { name: '', subject: '', htmlContent: '' };
@@ -23,6 +25,7 @@ const PAGE_SIZE = 15;
 export default function CampaignsPage() {
   const { hasRole } = useAuth();
   const isAdmin = hasRole('ADMIN');
+  const canSend = isAdmin || hasRole('MANAGER');
 
   // --- Campaign list state ---
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
@@ -53,6 +56,8 @@ export default function CampaignsPage() {
   const [sendMode, setSendMode] = useState<SendMode>('immediate');
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
+  const [sendTarget, setSendTarget] = useState<Campaign | null>(null);
+  const [sending, setSending] = useState(false);
 
   const location = useLocation();
 
@@ -208,6 +213,34 @@ export default function CampaignsPage() {
     catch { toast.error('Failed to retry'); }
   }
 
+  /** Opens the review dialog; the dialog always derives its audience from assignments. */
+  function promptSend(campaign: Campaign) {
+    if (!getAssignedRecipients(campaign).length) {
+      toast.error('Assign at least one contact before sending this campaign');
+      return;
+    }
+    setSendTarget(campaign);
+  }
+
+  async function confirmSend(sendMode: SendMode, scheduledAt?: string) {
+    if (!sendTarget) return;
+    setSending(true);
+    try {
+      await campaignsApi.sendNow(sendTarget.id, { sendMode, scheduledAt });
+      toast.success(
+        sendMode === 'scheduled' ? 'Assigned campaign scheduled!' :
+        sendMode === 'interval' ? 'Assigned campaign queued with interval sending!' :
+        `Campaign queued for ${getAssignedRecipients(sendTarget).length} assigned contact(s)`
+      );
+      setSendTarget(null);
+      load();
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || 'Failed to send campaign');
+    } finally {
+      setSending(false);
+    }
+  }
+
   // Sets the delete target to a single campaign, opening the confirm dialog
   function promptDelete(e: React.MouseEvent, campaign: Campaign) {
     e.stopPropagation();
@@ -321,10 +354,17 @@ export default function CampaignsPage() {
         <CampaignDetailModal
           campaign={selectedLive}
           isAdmin={isAdmin}
+          canSend={canSend}
           onClose={() => setDetailCampaign(null)}
           onDelete={promptDelete}
           onRetry={handleRetry}
+          onSend={promptSend}
         />
+      )}
+
+      {sendTarget && (
+        <SendAssignedCampaignDialog campaign={sendTarget} submitting={sending}
+          onConfirm={confirmSend} onCancel={() => !sending && setSendTarget(null)} />
       )}
 
       {/* Confirm dialog — shown for both single and bulk deletes */}
