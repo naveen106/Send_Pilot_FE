@@ -54,9 +54,10 @@ export const contactsApi = {
   update: (id: number, data: object) => api.put(`/contacts/${id}`, data),
   remove: (id: number) => api.delete(`/contacts/${id}`),
   bulkRemove: (ids: number[]) => api.delete('/contacts', { data: { ids } }),
-  import: (file: File) => {
+  import: (file: File, campaignIds: number[] = []) => {
     const form = new FormData();
     form.append('file', file);
+    if (campaignIds.length) form.append('campaignIds', JSON.stringify(campaignIds));
     return api.post('/contacts/import', form);
   },
   deduplicate: () => api.post('/contacts/deduplicate'),

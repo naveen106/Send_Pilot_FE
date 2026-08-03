@@ -1,10 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { campaignsApi } from '../api';
-import { Campaign } from '../types';
 import toast from 'react-hot-toast';
-import { X, Send, RefreshCw, Search, Check } from 'lucide-react';
-import StatusBadge from './StatusBadge';
-import EmptyState from './EmptyState';
+import { X, Send, RefreshCw, Check } from 'lucide-react';
+import CampaignSelector from './CampaignSelector';
 
 interface Props {
   contactCount: number;
@@ -15,33 +13,8 @@ interface Props {
 
 /** Assigns the selected contacts to one or more reusable campaigns. */
 export default function AssignCampaignsModal({ contactCount, emails, onClose, onAssigned }: Props) {
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
-  const [loading, setLoading] = useState(true);
   const [assigning, setAssigning] = useState(false);
   const [selectedCampaignIds, setSelectedCampaignIds] = useState<Set<number>>(new Set());
-  const [search, setSearch] = useState('');
-
-  const filtered = campaigns.filter((c) => {
-    if (!search.trim()) return true;
-    const q = search.trim().toLowerCase();
-    return c.name.toLowerCase().includes(q) || c.subject.toLowerCase().includes(q);
-  });
-
-  useEffect(() => {
-    campaignsApi.getAll(1, 200)
-      .then((r) => setCampaigns(r.data.data.campaigns ?? []))
-      .catch(() => toast.error('Failed to load campaigns'))
-      .finally(() => setLoading(false));
-  }, []);
-
-  function toggleCampaign(id: number) {
-    setSelectedCampaignIds((current) => {
-      const next = new Set(current);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
-  }
 
   async function handleAssign() {
     if (selectedCampaignIds.size === 0) {
@@ -90,71 +63,8 @@ export default function AssignCampaignsModal({ contactCount, emails, onClose, on
           </button>
         </div>
 
-        <div className="px-5 py-3 border-b border-white/[0.05] shrink-0">
-          <div className="relative">
-            <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search campaigns by name or subject..."
-              className="input-field pl-9 py-2 text-xs"
-              disabled={loading}
-            />
-          </div>
-        </div>
-
-        <div className="overflow-y-auto flex-1 min-h-0">
-          {loading ? (
-            <div className="py-16 flex items-center justify-center gap-2 text-slate-500 text-sm">
-              <RefreshCw size={14} className="animate-spin" /> Loading campaigns...
-            </div>
-          ) : filtered.length === 0 ? (
-            <EmptyState
-              icon={Send}
-              message={campaigns.length === 0 ? 'No campaigns yet' : 'No matching campaigns'}
-              hint={campaigns.length === 0 ? 'Create a campaign first, then reuse it here' : 'Try a different search'}
-            />
-          ) : (
-            <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-[#0d0d14]/90 backdrop-blur-sm z-10">
-                <tr className="border-b border-white/[0.05]">
-                  <th className="px-5 py-3 w-10" />
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-slate-600 uppercase tracking-wider">Campaign</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-slate-600 uppercase tracking-wider">Recipients</th>
-                  <th className="px-5 py-3 text-left text-[11px] font-semibold text-slate-600 uppercase tracking-wider">Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((campaign) => {
-                  const selected = selectedCampaignIds.has(campaign.id);
-                  return (
-                    <tr
-                      key={campaign.id}
-                      onClick={() => toggleCampaign(campaign.id)}
-                      className={`table-row cursor-pointer ${selected ? 'bg-violet-500/5' : ''}`}
-                    >
-                      <td className="px-5 py-3">
-                        <input
-                          type="checkbox"
-                          checked={selected}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={() => toggleCampaign(campaign.id)}
-                          className="w-3.5 h-3.5 accent-violet-500 cursor-pointer"
-                        />
-                      </td>
-                      <td className="px-5 py-3">
-                        <p className="text-slate-200 text-sm font-medium truncate max-w-[200px]">{campaign.name}</p>
-                        <p className="text-[11px] text-slate-600 truncate max-w-[200px] mt-0.5">{campaign.subject}</p>
-                      </td>
-                      <td className="px-5 py-3 text-slate-500 text-xs">{(campaign.totalCount ?? campaign.recipients?.length ?? 0).toLocaleString()}</td>
-                      <td className="px-5 py-3"><StatusBadge status={campaign.status} /></td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+        <div className="px-5 py-4 overflow-y-auto flex-1 min-h-0">
+          <CampaignSelector selectedCampaignIds={selectedCampaignIds} onChange={setSelectedCampaignIds} disabled={assigning} title="Campaigns" />
         </div>
 
         <div className="px-5 py-4 border-t border-white/[0.06] flex items-center justify-between gap-3 shrink-0">
@@ -165,10 +75,10 @@ export default function AssignCampaignsModal({ contactCount, emails, onClose, on
             <button onClick={onClose} className="btn-ghost text-xs py-1.5 px-4">Cancel</button>
             <button
               onClick={handleAssign}
-              disabled={loading || assigning || selectedCampaignIds.size === 0}
+              disabled={assigning || selectedCampaignIds.size === 0}
               className="btn-primary text-xs py-1.5 px-4"
             >
-              {loading || assigning ? <><RefreshCw size={12} className="animate-spin" /> {assigning ? 'Assigning...' : 'Loading...'}</> : <><Check size={12} /> Assign campaigns</>}
+              {assigning ? <><RefreshCw size={12} className="animate-spin" /> Assigning...</> : <><Check size={12} /> Assign campaigns</>}
             </button>
           </div>
         </div>
