@@ -17,6 +17,7 @@ import CampaignSearchDropdown from '../components/CampaignSearchDropdown';
 import Pagination from '../components/Pagination';
 import SendAssignedCampaignDialog from '../components/campaigns/SendAssignedCampaignDialog';
 import { getAssignedRecipients } from '../utils/campaign';
+import { DEFAULT_24_HOUR_EMAIL_LIMIT, isValid24HourEmailLimit } from '../constants/email';
 
 // Default empty state for the compose form fields
 const EMPTY_FORM = { name: '', subject: '', htmlContent: '' };
@@ -42,6 +43,7 @@ export default function CampaignsPage() {
   const [toTags, setToTags] = useState<string[]>([]);
   const [toError, setToError] = useState('');
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [dailyLimit, setDailyLimit] = useState<number | ''>(DEFAULT_24_HOUR_EMAIL_LIMIT);
   const [submitting, setSubmitting] = useState(false);
 
   // --- Detail modal state ---
@@ -169,6 +171,7 @@ export default function CampaignsPage() {
     setToInput('');
     setToError('');
     setAttachments([]);
+    setDailyLimit(DEFAULT_24_HOUR_EMAIL_LIMIT);
     setSendMode('immediate');
     setScheduledAt('');
     setShowModeMenu(false);
@@ -195,6 +198,7 @@ export default function CampaignsPage() {
       setToInput('');
     }
     if (finalTags.length === 0) { setToError('Add at least one recipient'); return; }
+    if (typeof dailyLimit !== 'number' || !isValid24HourEmailLimit(dailyLimit)) { toast.error('24-hour email limit must be between 1 and 200'); return; }
     if (sendMode === 'scheduled' && !scheduledAt) { toast.error('Please pick a schedule date & time'); return; }
 
     setSubmitting(true);
@@ -205,6 +209,7 @@ export default function CampaignsPage() {
         // Only send scheduledAt when mode is 'scheduled'
         scheduledAt: sendMode === 'scheduled' ? scheduledAt : undefined,
         sendMode,
+        dailyLimit,
       }, attachments);
       toast.success(
         sendMode === 'immediate' ? 'Campaign queued!' :
@@ -239,11 +244,11 @@ export default function CampaignsPage() {
     setActiveSendCampaignId(null);
   }
 
-  async function confirmSend(sendMode: SendMode, scheduledAt?: string) {
+  async function confirmSend(sendMode: SendMode, scheduledAt?: string, dailyLimit?: number) {
     if (!sendTarget) return;
     setSending(true);
     try {
-      await campaignsApi.sendNow(sendTarget.id, { sendMode, scheduledAt });
+      await campaignsApi.sendNow(sendTarget.id, { sendMode, scheduledAt, dailyLimit });
       // Start polling immediately even when the campaign was previously
       // COMPLETED/FAILED and therefore was not considered "hot" by the page.
       // The backend updates assignment rows and delivery history after each
@@ -343,6 +348,7 @@ export default function CampaignsPage() {
           sendMode={sendMode}
           showModeMenu={showModeMenu}
           scheduledAt={scheduledAt}
+          dailyLimit={dailyLimit}
           onFormChange={(field, value) => setForm((p) => ({ ...p, [field]: value }))}
           onToInputChange={(v) => { setToInput(v); setToError(''); }}
           onToKeyDown={handleToKeyDown}
@@ -356,6 +362,7 @@ export default function CampaignsPage() {
           onToggleModeMenu={() => setShowModeMenu((v) => !v)}
           onCloseModeMenu={() => setShowModeMenu(false)}
           onScheduledAtChange={setScheduledAt}
+          onDailyLimitChange={setDailyLimit}
           onSubmit={handleCreate}
           onClose={closeForm}
         />

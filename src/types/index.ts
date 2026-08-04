@@ -25,6 +25,7 @@ export interface Campaign {
   status: string;
   recipients: string[];
   totalCount: number;
+  dailyLimit: number;
   scheduledAt?: string;
   createdAt: string;
   updatedAt: string;
@@ -33,6 +34,13 @@ export interface Campaign {
   attachments?: { filename: string; content: string; contentType: string }[];
   user?: { name: string; email: string } | null; // null when creator was deleted
   assignedCampaigns?: { id: number; contactId: number; contacts: Contact; campaignId: number; campaign: Campaign }[];
+  failedRecipients?: {
+    id: number;
+    email: string;
+    reason: string;
+    failedAt: string;
+    contact: { id: number; email: string; name: string | null } | null;
+  }[];
   sentDeliveries?: {
     id: number;
     email: string;
