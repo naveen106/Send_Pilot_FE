@@ -59,6 +59,7 @@ export default function CampaignsPage() {
   const [showModeMenu, setShowModeMenu] = useState(false);
   const [scheduledAt, setScheduledAt] = useState('');
   const [sendTarget, setSendTarget] = useState<Campaign | null>(null);
+  const [retryingFailed, setRetryingFailed] = useState(false);
   const [sending, setSending] = useState(false);
   const [activeSendCampaignId, setActiveSendCampaignId] = useState<number | null>(null);
 
@@ -224,10 +225,14 @@ export default function CampaignsPage() {
   }
 
   // Retries a failed/paused campaign — stops event bubbling so the row click doesn't fire
-  async function handleRetry(e: React.MouseEvent, id: number) {
+  function handleRetry(e: React.MouseEvent, campaign: Campaign) {
     e.stopPropagation();
-    try { await campaignsApi.retry(id); toast.success('Retry initiated'); load(); }
-    catch { toast.error('Failed to retry'); }
+    if (!(campaign.failedRecipients ?? []).length) {
+      toast.error('No failed recipients are available to retry');
+      return;
+    }
+    setRetryingFailed(true);
+    setSendTarget(campaign);
   }
 
   /** Opens the review dialog; the dialog always derives its audience from assignments. */
@@ -236,6 +241,7 @@ export default function CampaignsPage() {
       toast.error('Assign at least one contact before sending this campaign');
       return;
     }
+    setRetryingFailed(false);
     setSendTarget(campaign);
   }
 
@@ -248,7 +254,7 @@ export default function CampaignsPage() {
     if (!sendTarget) return;
     setSending(true);
     try {
-      await campaignsApi.sendNow(sendTarget.id, { sendMode, scheduledAt, dailyLimit });
+      await campaignsApi.sendNow(sendTarget.id, { sendMode, scheduledAt, dailyLimit, retryFailed: retryingFailed });
       // Start polling immediately even when the campaign was previously
       // COMPLETED/FAILED and therefore was not considered "hot" by the page.
       // The backend updates assignment rows and delivery history after each
@@ -264,10 +270,11 @@ export default function CampaignsPage() {
       setActiveSendCampaignId(sendTarget.id);
       toast.success(
         sendMode === 'scheduled' ? 'Assigned campaign scheduled!' :
-        sendMode === 'interval' ? 'Assigned campaign queued with interval sending!' :
-        `Campaign queued for ${getAssignedRecipients(sendTarget).length} assigned contact(s)`
+        sendMode === 'interval' ? (retryingFailed ? 'Failed recipients queued with interval retry!' : 'Assigned campaign queued with interval sending!') :
+        retryingFailed ? 'Failed recipients queued for retry!' : `Campaign queued for ${getAssignedRecipients(sendTarget).length} assigned contact(s)`
       );
       setSendTarget(null);
+      setRetryingFailed(false);
       // Do not immediately reload here: the background worker may not have
       // changed the persisted status yet. The optimistic RUNNING/SCHEDULED
       // state above keeps polling active until the server reflects progress.
@@ -403,7 +410,9 @@ export default function CampaignsPage() {
 
       {sendTarget && (
         <SendAssignedCampaignDialog campaign={sendTarget} submitting={sending}
-          onConfirm={confirmSend} onCancel={() => !sending && setSendTarget(null)} />
+          recipientEmails={retryingFailed ? (sendTarget.failedRecipients ?? []).map((recipient) => recipient.email) : undefined}
+          retryMode={retryingFailed}
+          onConfirm={confirmSend} onCancel={() => { if (!sending) { setSendTarget(null); setRetryingFailed(false); } }} />
       )}
 
       {/* Confirm dialog — shown for both single and bulk deletes */}

@@ -9,13 +9,15 @@ import DailyLimitField from './DailyLimitField';
 interface Props {
   campaign: Campaign;
   submitting: boolean;
+  recipientEmails?: string[];
+  retryMode?: boolean;
   onConfirm: (sendMode: SendMode, scheduledAt?: string, dailyLimit?: number) => void;
   onCancel: () => void;
 }
 
 /** Confirmation step for an assigned-only campaign send. */
-export default function SendAssignedCampaignDialog({ campaign, submitting, onConfirm, onCancel }: Props) {
-  const recipients = getAssignedRecipients(campaign);
+export default function SendAssignedCampaignDialog({ campaign, submitting, recipientEmails, retryMode = false, onConfirm, onCancel }: Props) {
+  const recipients = recipientEmails ?? getAssignedRecipients(campaign);
   const [sendMode, setSendMode] = useState<SendMode>('immediate');
   const [scheduledAt, setScheduledAt] = useState('');
   const [dailyLimit, setDailyLimit] = useState<number | ''>(campaign.dailyLimit || DEFAULT_24_HOUR_EMAIL_LIMIT);
@@ -35,9 +37,9 @@ export default function SendAssignedCampaignDialog({ campaign, submitting, onCon
         <div className="flex items-start justify-between px-6 py-4 border-b border-white/[0.06] bg-gradient-to-r from-emerald-500/10 to-transparent">
           <div>
             <p className="text-sm font-semibold text-white flex items-center gap-2">
-              <Send size={14} className="text-emerald-400" /> Send to assigned contacts
+              <Send size={14} className={retryMode ? 'text-red-400' : 'text-emerald-400'} /> {retryMode ? 'Retry failed recipients' : 'Send to assigned contacts'}
             </p>
-            <p className="text-xs text-slate-500 mt-1">Review the exact audience and message before queuing this campaign.</p>
+            <p className="text-xs text-slate-500 mt-1">{retryMode ? 'Review the failed recipients before choosing how to retry them.' : 'Review the exact audience and message before queuing this campaign.'}</p>
           </div>
           <button onClick={onCancel} disabled={submitting} className="w-7 h-7 rounded-lg bg-white/5 hover:bg-white/10 flex items-center justify-center text-slate-400 hover:text-white disabled:opacity-50">
             <X size={14} />
@@ -50,13 +52,13 @@ export default function SendAssignedCampaignDialog({ campaign, submitting, onCon
               <Users size={16} className="text-emerald-400" />
             </div>
             <div>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">Recipients ({recipients.length})</p>
+            <p className="text-xs text-slate-500 uppercase tracking-wider">{retryMode ? 'Failed recipients' : 'Recipients'} ({recipients.length})</p>
               <p className="text-sm text-white font-medium">{campaign.name}</p>
             </div>
           </div>
           <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto rounded-xl bg-white/[0.02] border border-white/[0.06] p-3">
             {recipients.map((email) => (
-              <span key={email} className="bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-1 text-xs text-emerald-300">{email}</span>
+                <span key={email} className={`${retryMode ? 'bg-red-500/10 border-red-500/20 text-red-300' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'} border rounded-md px-2 py-1 text-xs`}>{email}</span>
             ))}
           </div>
 
@@ -69,7 +71,7 @@ export default function SendAssignedCampaignDialog({ campaign, submitting, onCon
           </div>
 
           <div className="flex items-center gap-2 text-[11px] text-slate-500">
-            <Eye size={13} className="text-emerald-400" /> Only the pending contacts assigned to this campaign will be sent this message.
+            <Eye size={13} className={retryMode ? 'text-red-400' : 'text-emerald-400'} /> {retryMode ? 'Only the failed recipients listed above will be retried.' : 'Only the pending contacts assigned to this campaign will be sent this message.'}
           </div>
 
           <div>
@@ -102,7 +104,7 @@ export default function SendAssignedCampaignDialog({ campaign, submitting, onCon
           <button onClick={onCancel} disabled={submitting} className="btn-ghost text-xs py-2">Cancel</button>
           <button onClick={confirm} disabled={submitting || recipients.length === 0 || typeof dailyLimit !== 'number' || !isValid24HourEmailLimit(dailyLimit) || (sendMode === 'scheduled' && !scheduledAt)} className="btn-primary text-xs py-2">
             {submitting ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />}
-            {submitting ? 'Queueing...' : `${activeMode.label} to ${recipients.length} contact${recipients.length === 1 ? '' : 's'}`}
+            {submitting ? 'Queueing...' : retryMode ? `${activeMode.label} retry (${recipients.length})` : `${activeMode.label} to ${recipients.length} contact${recipients.length === 1 ? '' : 's'}`}
           </button>
         </div>
       </div>
