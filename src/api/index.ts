@@ -28,7 +28,7 @@ export const campaignsApi = {
     api.get(`/campaigns?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}`),
   getOne: (id: number) => api.get(`/campaigns/${id}`),
   create: (data: {
-    name: string; subject: string; htmlContent: string; recipients: string[]; scheduledAt?: string; sendMode?: string;
+    name: string; subject: string; htmlContent: string; recipients: string[]; scheduledAt?: string; sendMode?: string; dailyLimit?: number;
   }, attachments: File[] = []) => {
     const form = new FormData();
     form.append('name', data.name);
@@ -37,10 +37,11 @@ export const campaignsApi = {
     data.recipients.forEach((r) => form.append('recipients', r));
     if (data.scheduledAt) form.append('scheduledAt', data.scheduledAt);
     if (data.sendMode) form.append('sendMode', data.sendMode);
+    if (data.dailyLimit !== undefined) form.append('dailyLimit', String(data.dailyLimit));
     attachments.forEach((f) => form.append('attachments', f));
     return api.post('/campaigns', form);
   },
-  sendNow: (id: number, options: { sendMode?: string; scheduledAt?: string } = {}) =>
+  sendNow: (id: number, options: { sendMode?: string; scheduledAt?: string; dailyLimit?: number } = {}) =>
     api.post(`/campaigns/${id}/send`, options),
   retry: (id: number) => api.post(`/campaigns/${id}/retry`),
   /** Merge contact emails into existing campaign recipient lists. */

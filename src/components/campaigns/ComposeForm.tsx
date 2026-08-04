@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { Send, X, Paperclip, Clock, Shuffle } from 'lucide-react';
 import { SendMode } from '../../types';
 import SendModeMenu from './SendModeMenu';
+import DailyLimitField from './DailyLimitField';
 
 interface Props {
   form: { name: string; subject: string; htmlContent: string };
@@ -13,6 +14,7 @@ interface Props {
   sendMode: SendMode;
   showModeMenu: boolean;
   scheduledAt: string;
+  dailyLimit: number | '';
   onFormChange: (field: string, value: string) => void;
   onToInputChange: (value: string) => void;
   onToKeyDown: (e: React.KeyboardEvent<HTMLInputElement>) => void;
@@ -26,6 +28,7 @@ interface Props {
   onToggleModeMenu: () => void;
   onCloseModeMenu: () => void;
   onScheduledAtChange: (value: string) => void;
+  onDailyLimitChange: (value: number | '') => void;
   onSubmit: (e: { preventDefault(): void }) => void;
   onClose: () => void;
 }
@@ -33,11 +36,11 @@ interface Props {
 /** Compose panel for creating a new campaign. */
 export default function ComposeForm({
   form, toInput, toTags, toError, attachments, submitting,
-  sendMode, showModeMenu, scheduledAt,
+  sendMode, showModeMenu, scheduledAt, dailyLimit,
   onFormChange, onToInputChange, onToKeyDown, onToPaste, onToBlur,
   onRemoveTag, onClearTags, onFilesChange, onRemoveAttachment,
   onSendModeSelect, onToggleModeMenu, onCloseModeMenu,
-  onScheduledAtChange, onSubmit, onClose,
+  onScheduledAtChange, onDailyLimitChange, onSubmit, onClose,
 }: Props) {
   // Ref to programmatically focus the recipient input when the row area is clicked
   const toInputRef = useRef<HTMLInputElement>(null);
@@ -177,9 +180,13 @@ export default function ComposeForm({
         {sendMode === 'interval' && (
           <div className="px-5 py-3 border-b border-white/[0.04] flex items-center gap-3 bg-violet-500/5">
             <Shuffle size={13} className="text-violet-400 shrink-0" />
-            <span className="text-[11px] text-violet-400 font-medium">Interval Send — emails will be sent at random intervals within the daily limit configured on the server.</span>
+            <span className="text-[11px] text-violet-400 font-medium">Interval Send — emails will be sent at random intervals within your 24-hour limit.</span>
           </div>
         )}
+
+        <div className="px-5 py-2 border-b border-white/[0.04]">
+          <DailyLimitField id="campaign-daily-limit" value={dailyLimit} onChange={onDailyLimitChange} />
+        </div>
 
         {/* Footer toolbar: attach button on the left, send mode split-button on the right */}
         <div className="px-5 py-3 flex items-center justify-between">

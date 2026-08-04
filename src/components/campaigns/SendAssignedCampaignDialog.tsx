@@ -3,11 +3,13 @@ import { Eye, Mail, RefreshCw, Send, Users, X, Clock, Shuffle } from 'lucide-rea
 import { Campaign, SendMode } from '../../types';
 import { getAssignedRecipients } from '../../utils/campaign';
 import { SEND_MODES } from './SendModeMenu';
+import { DEFAULT_24_HOUR_EMAIL_LIMIT, isValid24HourEmailLimit } from '../../constants/email';
+import DailyLimitField from './DailyLimitField';
 
 interface Props {
   campaign: Campaign;
   submitting: boolean;
-  onConfirm: (sendMode: SendMode, scheduledAt?: string) => void;
+  onConfirm: (sendMode: SendMode, scheduledAt?: string, dailyLimit?: number) => void;
   onCancel: () => void;
 }
 
@@ -16,11 +18,13 @@ export default function SendAssignedCampaignDialog({ campaign, submitting, onCon
   const recipients = getAssignedRecipients(campaign);
   const [sendMode, setSendMode] = useState<SendMode>('immediate');
   const [scheduledAt, setScheduledAt] = useState('');
+  const [dailyLimit, setDailyLimit] = useState<number | ''>(campaign.dailyLimit || DEFAULT_24_HOUR_EMAIL_LIMIT);
   const activeMode = SEND_MODES.find((item) => item.mode === sendMode)!;
 
   function confirm() {
     if (sendMode === 'scheduled' && !scheduledAt) return;
-    onConfirm(sendMode, sendMode === 'scheduled' ? scheduledAt : undefined);
+    if (typeof dailyLimit !== 'number' || !isValid24HourEmailLimit(dailyLimit)) return;
+    onConfirm(sendMode, sendMode === 'scheduled' ? scheduledAt : undefined, dailyLimit);
   }
 
   return (
@@ -88,13 +92,15 @@ export default function SendAssignedCampaignDialog({ campaign, submitting, onCon
                   className="bg-white/5 border border-amber-500/20 text-slate-300 text-xs rounded-lg px-2.5 py-1.5 outline-none [color-scheme:dark]" />
               </div>
             )}
-            {sendMode === 'interval' && <p className="mt-2 text-[11px] text-violet-300/80 flex items-center gap-1.5"><Shuffle size={12} /> Emails will use the server&apos;s configured interval and daily limit.</p>}
+            {sendMode === 'interval' && <p className="mt-2 text-[11px] text-violet-300/80 flex items-center gap-1.5"><Shuffle size={12} /> Emails will use random intervals within the selected 24-hour limit.</p>}
           </div>
+
+          <DailyLimitField id="assigned-daily-limit" value={dailyLimit} disabled={submitting} onChange={setDailyLimit} />
         </div>
 
         <div className="px-6 py-4 border-t border-white/[0.06] flex items-center justify-end gap-2">
           <button onClick={onCancel} disabled={submitting} className="btn-ghost text-xs py-2">Cancel</button>
-          <button onClick={confirm} disabled={submitting || recipients.length === 0 || (sendMode === 'scheduled' && !scheduledAt)} className="btn-primary text-xs py-2">
+          <button onClick={confirm} disabled={submitting || recipients.length === 0 || typeof dailyLimit !== 'number' || !isValid24HourEmailLimit(dailyLimit) || (sendMode === 'scheduled' && !scheduledAt)} className="btn-primary text-xs py-2">
             {submitting ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />}
             {submitting ? 'Queueing...' : `${activeMode.label} to ${recipients.length} contact${recipients.length === 1 ? '' : 's'}`}
           </button>

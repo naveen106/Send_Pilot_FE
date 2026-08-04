@@ -16,6 +16,9 @@ interface Props {
 export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClose, onDelete, onRetry, onSend }: Props) {
   const assignedRecipients = campaign.assignedCampaigns ?? [];
   const sentDeliveries = campaign.sentDeliveries ?? [];
+  const failedRecipients = campaign.failedRecipients ?? [];
+  const failedEmails = new Set(failedRecipients.map((recipient) => recipient.email.trim().toLowerCase()));
+  const pendingRecipients = assignedRecipients.filter((assigned) => !failedEmails.has(assigned.contacts.email.trim().toLowerCase()));
   return (
     // Clicking the backdrop closes the modal
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -87,18 +90,34 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
             </div>
           </div>
 
+          {failedRecipients.length > 0 && (
+            <div className="px-6 py-4 border-b border-red-500/20 bg-red-500/[0.03]">
+              <p className="text-[11px] text-red-400 uppercase tracking-wider font-medium mb-2">
+                Failed To ({failedRecipients.length})
+              </p>
+              <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+                {failedRecipients.map((recipient) => (
+                  <span key={recipient.id} title={recipient.reason}
+                    className="bg-red-500/10 border border-red-500/25 rounded-md px-2 py-0.5 text-xs text-red-300">
+                    {recipient.email}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
 {/* Full assigned contacts list- only shown when they exist */}
           <div className="px-6 py-4 border-b border-white/[0.05]">
            <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
-                Assigned To ({assignedRecipients.length})
+                Pending Assigned To ({pendingRecipients.length})
             </p>
               <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                {assignedRecipients.map((assigned) => (
+                {pendingRecipients.map((assigned) => (
                   <span key={assigned.contacts.id} className="bg-violet-500/10 border border-violet-500/20 rounded-md px-2 py-0.5 text-xs text-violet-300">
                     {assigned.contacts.email}
                   </span>
                 ))}
-                {assignedRecipients.length === 0 && <span className="text-xs text-slate-600">No contacts are assigned to this campaign.</span>}
+                {pendingRecipients.length === 0 && <span className="text-xs text-slate-600">No pending contacts are assigned to this campaign.</span>}
               </div>
             </div>
           
