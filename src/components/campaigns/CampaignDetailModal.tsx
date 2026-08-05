@@ -17,6 +17,7 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
   const assignedRecipients = campaign.assignedCampaigns ?? [];
   const sentDeliveries = campaign.sentDeliveries ?? [];
   const failedRecipients = campaign.failedRecipients ?? [];
+  const canRetryFailed = canSend && failedRecipients.length > 0;
   const failedEmails = new Set(failedRecipients.map((recipient) => recipient.email.trim().toLowerCase()));
   const pendingRecipients = assignedRecipients.filter((assigned) => !failedEmails.has(assigned.contacts.email.trim().toLowerCase()));
   return (
@@ -86,7 +87,7 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
               <p className="text-[11px] text-red-400 uppercase tracking-wider font-medium mb-2">
                 <span className="flex items-center justify-between gap-3">
                   <span>Failed To ({failedRecipients.length})</span>
-                  {canSend && (
+                  {canRetryFailed && (
                     <button onClick={(e) => onRetry(e, campaign)}
                       className="inline-flex items-center gap-1 rounded-md bg-red-500/15 hover:bg-red-500/25 border border-red-500/25 px-2 py-1 text-[10px] normal-case tracking-normal text-red-300 transition-colors">
                       <RefreshCw size={10} /> Retry failed
