@@ -11,22 +11,22 @@ interface Props {
 /** Shared server-side pagination control for list/table views. */
 export default function Pagination({ page, total, pageSize, onPageChange, disabled = false }: Props) {
   const totalPages = Math.ceil(total / pageSize);
-  if (totalPages <= 1) return null;
+  if (totalPages === 0) return null;
 
   const pageNumbers = Array.from({ length: totalPages }, (_, index) => index + 1);
-  const visiblePages = totalPages <= 7
+  const visiblePages = totalPages <= 10
     ? pageNumbers
     : pageNumbers.filter((pageNumber) =>
         pageNumber === 1 || pageNumber === totalPages || Math.abs(pageNumber - page) <= 1
       );
 
   return (
-    <div className="flex items-center justify-between gap-3 px-1 py-4">
+    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-1 py-4">
       <span className="text-xs text-slate-600">
         Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, total)} of {total}
       </span>
-      <div className="flex items-center gap-1">
-        <button type="button" onClick={() => onPageChange(page - 1)} disabled={disabled || page === 1}
+      <div className="col-start-2 flex items-center gap-1">
+        <button type="button" onClick={() => page > 1 && onPageChange(page - 1)} disabled={disabled}
           className="p-1.5 rounded-lg text-slate-500 hover:bg-white/5 hover:text-white disabled:opacity-30 disabled:pointer-events-none" aria-label="Previous page">
           <ChevronLeft size={14} />
         </button>
@@ -43,7 +43,7 @@ export default function Pagination({ page, total, pageSize, onPageChange, disabl
             </span>
           );
         })}
-        <button type="button" onClick={() => onPageChange(page + 1)} disabled={disabled || page === totalPages}
+        <button type="button" onClick={() => page < totalPages && onPageChange(page + 1)} disabled={disabled}
           className="p-1.5 rounded-lg text-slate-500 hover:bg-white/5 hover:text-white disabled:opacity-30 disabled:pointer-events-none" aria-label="Next page">
           <ChevronRight size={14} />
         </button>

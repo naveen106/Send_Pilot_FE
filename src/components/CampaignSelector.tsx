@@ -1,10 +1,13 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { campaignsApi } from '../api';
 import { Campaign } from '../types';
 import toast from 'react-hot-toast';
 import { RefreshCw, Search, Send } from 'lucide-react';
 import StatusBadge from './StatusBadge';
 import EmptyState from './EmptyState';
+import Pagination from './Pagination';
+
+const PAGE_SIZE = 10;
 
 interface Props {
   selectedCampaignIds: Set<number>;
@@ -27,6 +30,8 @@ export default function CampaignSelector({
   description,
 }: Props) {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalCampaigns, setTotalCampaigns] = useState(0);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState(defaultExpanded);
@@ -34,19 +39,19 @@ export default function CampaignSelector({
   useEffect(() => {
     if (collapsible && !expanded) return;
     setLoading(true);
-    campaignsApi.getAll(1, 200)
-      .then((response) => setCampaigns(response.data.data.campaigns ?? []))
+    campaignsApi.getAll(page, PAGE_SIZE, search)
+      .then((response) => {
+        const data = response.data.data;
+        if (page > 1 && (data.campaigns ?? []).length === 0) {
+          setPage(page - 1);
+          return;
+        }
+        setCampaigns(data.campaigns ?? []);
+        setTotalCampaigns(data.total ?? 0);
+      })
       .catch(() => toast.error('Failed to load campaigns'))
       .finally(() => setLoading(false));
-  }, [collapsible, expanded]);
-
-  const filtered = useMemo(() => {
-    const query = search.trim().toLowerCase();
-    if (!query) return campaigns;
-    return campaigns.filter((campaign) =>
-      campaign.name.toLowerCase().includes(query) || campaign.subject.toLowerCase().includes(query)
-    );
-  }, [campaigns, search]);
+  }, [collapsible, expanded, page, search]);
 
   function toggle(id: number) {
     const next = new Set(selectedCampaignIds);
@@ -73,7 +78,7 @@ export default function CampaignSelector({
         </div>
         {expanded && <div className="relative mt-2">
           <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-600" />
-          <input value={search} onChange={(event) => setSearch(event.target.value)} disabled={loading || disabled}
+          <input value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} disabled={loading || disabled}
             placeholder="Search campaigns by subject or name..." className="input-field pl-9 py-2 text-xs" />
         </div>}
       </div>
@@ -81,12 +86,12 @@ export default function CampaignSelector({
       {expanded && <div className="max-h-64 overflow-y-auto">
         {loading ? (
           <div className="py-10 flex justify-center items-center gap-2 text-slate-500 text-xs"><RefreshCw size={13} className="animate-spin" /> Loading campaigns...</div>
-        ) : filtered.length === 0 ? (
-          <EmptyState icon={Send} message={campaigns.length ? 'No matching campaigns' : 'No campaigns yet'} hint="Create a campaign first, then select it here" />
+        ) : campaigns.length === 0 ? (
+          <EmptyState icon={Send} message={search.trim() ? 'No matching campaigns' : 'No campaigns yet'} hint="Create a campaign first, then select it here" />
         ) : (
           <table className="w-full text-sm">
             <tbody>
-              {filtered.map((campaign) => {
+              {campaigns.map((campaign) => {
                 const selected = selectedCampaignIds.has(campaign.id);
                 return (
                   <tr key={campaign.id} onClick={() => !disabled && toggle(campaign.id)} className={`table-row cursor-pointer ${selected ? 'bg-violet-500/5' : ''}`}>
@@ -107,6 +112,8 @@ export default function CampaignSelector({
           </table>
         )}
       </div>}
+      {expanded && <Pagination page={page} total={totalCampaigns} pageSize={PAGE_SIZE}
+        onPageChange={setPage} disabled={loading || disabled} />}
     </div>
   );
 }
