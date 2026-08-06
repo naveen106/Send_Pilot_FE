@@ -90,7 +90,7 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
                   {canRetryFailed && (
                     <button onClick={(e) => onRetry(e, campaign)}
                       className="inline-flex items-center gap-1 rounded-md bg-red-500/15 hover:bg-red-500/25 border border-red-500/25 px-2 py-1 text-[10px] normal-case tracking-normal text-red-300 transition-colors">
-                      <RefreshCw size={10} /> Retry failed
+                      <RefreshCw size={10} /> Retry
                     </button>
                   )}
                 </span>
