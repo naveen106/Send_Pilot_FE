@@ -63,6 +63,7 @@ export interface DashboardStats {
   sentToday: number;
   scheduledCampaigns: number;
   totalCampaigns: number;
+  totalContacts: number;
 }
 
 export interface assignedCampaigns {

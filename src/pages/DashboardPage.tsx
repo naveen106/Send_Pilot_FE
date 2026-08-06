@@ -1,16 +1,25 @@
 import { useEffect, useState } from 'react';
 import { dashboardApi } from '../api';
 import { DashboardStats } from '../types';
-import { Mail, Send, Calendar, BarChart3, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { Mail, Send, Calendar, BarChart3, TrendingUp, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import PageHeader from '../components/PageHeader';
+import DashboardStatCard, { DashboardStatCardConfig } from '../components/DashboardStatCard';
 
-const cards = [
-  { key: 'totalEmails', label: 'Total Emails', icon: Mail, gradient: 'from-violet-600/20 to-violet-600/5', border: 'border-violet-500/20', icon_bg: 'bg-violet-500/20', icon_color: 'text-violet-400' },
-  { key: 'sentToday', label: 'Sent Today', icon: Send, gradient: 'from-emerald-600/20 to-emerald-600/5', border: 'border-emerald-500/20', icon_bg: 'bg-emerald-500/20', icon_color: 'text-emerald-400' },
-  { key: 'scheduledCampaigns', label: 'Scheduled', icon: Calendar, gradient: 'from-amber-600/20 to-amber-600/5', border: 'border-amber-500/20', icon_bg: 'bg-amber-500/20', icon_color: 'text-amber-400' },
-  { key: 'totalCampaigns', label: 'Campaigns', icon: BarChart3, gradient: 'from-sky-600/20 to-sky-600/5', border: 'border-sky-500/20', icon_bg: 'bg-sky-500/20', icon_color: 'text-sky-400' },
-] as const;
+type StatKey = keyof DashboardStats;
+
+interface DashboardCard extends DashboardStatCardConfig {
+  key: StatKey;
+}
+
+// Card configuration keeps the dashboard layout consistent and makes new metrics easy to add.
+const cards: DashboardCard[] = [
+  { key: 'totalEmails', label: 'Total Emails', icon: Mail, gradient: 'from-violet-600/20 to-violet-600/5', border: 'border-violet-500/20', iconBackground: 'bg-violet-500/20', iconColor: 'text-violet-400' },
+  { key: 'sentToday', label: 'Sent Today', icon: Send, gradient: 'from-emerald-600/20 to-emerald-600/5', border: 'border-emerald-500/20', iconBackground: 'bg-emerald-500/20', iconColor: 'text-emerald-400' },
+  { key: 'scheduledCampaigns', label: 'Scheduled', icon: Calendar, gradient: 'from-amber-600/20 to-amber-600/5', border: 'border-amber-500/20', iconBackground: 'bg-amber-500/20', iconColor: 'text-amber-400' },
+  { key: 'totalCampaigns', label: 'Campaigns', icon: BarChart3, gradient: 'from-sky-600/20 to-sky-600/5', border: 'border-sky-500/20', iconBackground: 'bg-sky-500/20', iconColor: 'text-sky-400' },
+  { key: 'totalContacts', label: 'Contacts', icon: Users, gradient: 'from-rose-600/20 to-rose-600/5', border: 'border-rose-500/20', iconBackground: 'bg-rose-500/20', iconColor: 'text-rose-400' },
+];
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -30,32 +39,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats Grid */}
-      {stats ? (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {cards.map(({ key, label, icon: Icon, gradient, border, icon_bg, icon_color }) => (
-            <div key={key} className={`glass rounded-2xl p-5 border ${border} bg-gradient-to-br ${gradient} relative overflow-hidden group`}>
-              <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                <ArrowUpRight size={14} className="text-slate-500" />
-              </div>
-              <div className={`w-9 h-9 rounded-xl ${icon_bg} flex items-center justify-center mb-3`}>
-                <Icon size={17} className={icon_color} />
-              </div>
-              <p className="text-xs text-slate-500 mb-1">{label}</p>
-              <p className="text-2xl font-bold text-white">{stats[key].toLocaleString()}</p>
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="glass rounded-2xl p-5 h-32 animate-pulse">
-              <div className="w-9 h-9 rounded-xl bg-white/5 mb-4" />
-              <div className="h-7 w-16 bg-white/5 rounded-lg mb-2" />
-              <div className="h-3 w-20 bg-white/5 rounded" />
-            </div>
-          ))}
-        </div>
-      )}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+        {cards.map((card) => <DashboardStatCard key={card.key} config={card} value={stats ? stats[card.key] : null} />)}
+      </div>
 
       {/* Quick tip */}
       <div className="glass rounded-2xl p-5 border border-violet-500/10 bg-gradient-to-r from-violet-600/5 to-transparent">
