@@ -2,7 +2,6 @@ import { campaignsApi } from '../api';
 import { Campaign } from '../types';
 import StatusBadge from './StatusBadge';
 import PaginatedSearchDropdown from './PaginatedSearchDropdown';
-import { htmlToTextPreview } from '../utils/htmlText';
 
 interface Props {
   onSelect?: (campaign: Campaign) => void;
@@ -28,7 +27,7 @@ export default function CampaignSearchDropdown({ onSelect }: Props) {
             <div className="min-w-0">
               <p className="text-xs font-medium text-slate-200 truncate">{campaign.name}</p>
               <p className="text-[11px] text-slate-500 truncate mt-0.5">{campaign.subject}</p>
-              <p className="text-[11px] text-slate-600 truncate mt-1">{htmlToTextPreview(campaign.htmlContent) || 'No campaign content'}</p>
+              {/* <p className="text-[11px] text-slate-600 truncate mt-1">{htmlToTextPreview(campaign.htmlContent) || 'No campaign content'}</p> */}
             </div>
             <StatusBadge status={campaign.status} />
           </div>

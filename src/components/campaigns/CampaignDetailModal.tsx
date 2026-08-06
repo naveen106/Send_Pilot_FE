@@ -1,4 +1,4 @@
-import { X, FileText, Users, Calendar, Paperclip, Trash2, RefreshCw, Send } from 'lucide-react';
+import { X, FileText, Users, Paperclip, Trash2, RefreshCw, Send } from 'lucide-react';
 import { Campaign } from '../../types';
 import StatusBadge from '../StatusBadge';
 
@@ -8,7 +8,7 @@ interface Props {
   canSend: boolean;
   onClose: () => void;
   onDelete: (e: React.MouseEvent, campaign: Campaign) => void;
-  onRetry: (e: React.MouseEvent, id: number) => void;
+  onRetry: (e: React.MouseEvent, campaign: Campaign) => void;
   onSend: (campaign: Campaign) => void;
 }
 
@@ -17,6 +17,7 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
   const assignedRecipients = campaign.assignedCampaigns ?? [];
   const sentDeliveries = campaign.sentDeliveries ?? [];
   const failedRecipients = campaign.failedRecipients ?? [];
+  const canRetryFailed = canSend && failedRecipients.length > 0;
   const failedEmails = new Set(failedRecipients.map((recipient) => recipient.email.trim().toLowerCase()));
   const pendingRecipients = assignedRecipients.filter((assigned) => !failedEmails.has(assigned.contacts.email.trim().toLowerCase()));
   return (
@@ -47,8 +48,8 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
 
         {/* Scrollable body */}
         <div className="overflow-y-auto flex-1">
-          {/* 3-column stats row: subject, recipient count, scheduled time */}
-          <div className="grid grid-cols-3 divide-x divide-white/[0.05] border-b border-white/[0.05]">
+          {/* Campaign summary: subject and recipient count */}
+          <div className="grid grid-cols-2 divide-x divide-white/[0.05] border-b border-white/[0.05]">
             <div className="px-5 py-3.5 flex items-center gap-2.5">
               <FileText size={13} className="text-slate-500 shrink-0" />
               <div>
@@ -61,15 +62,6 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
               <div>
                 <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium">Recipients</p>
                 <p className="text-xs text-slate-300 mt-0.5">{campaign.totalCount.toLocaleString()} contacts</p>
-              </div>
-            </div>
-            <div className="px-5 py-3.5 flex items-center gap-2.5">
-              <Calendar size={13} className="text-slate-500 shrink-0" />
-              <div>
-                <p className="text-[10px] text-slate-600 uppercase tracking-wider font-medium">Scheduled</p>
-                <p className="text-xs text-slate-300 mt-0.5">
-                  {campaign.scheduledAt ? new Date(campaign.scheduledAt).toLocaleString() : 'Immediate'}
-                </p>
               </div>
             </div>
           </div>
@@ -93,7 +85,15 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
           {failedRecipients.length > 0 && (
             <div className="px-6 py-4 border-b border-red-500/20 bg-red-500/[0.03]">
               <p className="text-[11px] text-red-400 uppercase tracking-wider font-medium mb-2">
-                Failed To ({failedRecipients.length})
+                <span className="flex items-center justify-between gap-3">
+                  <span>Failed To ({failedRecipients.length})</span>
+                  {canRetryFailed && (
+                    <button onClick={(e) => onRetry(e, campaign)}
+                      className="inline-flex items-center gap-1 rounded-md bg-red-500/15 hover:bg-red-500/25 border border-red-500/25 px-2 py-1 text-[10px] normal-case tracking-normal text-red-300 transition-colors">
+                      <RefreshCw size={10} /> Retry
+                    </button>
+                  )}
+                </span>
               </p>
               <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
                 {failedRecipients.map((recipient) => (
@@ -109,7 +109,7 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
 {/* Full assigned contacts list- only shown when they exist */}
           <div className="px-6 py-4 border-b border-white/[0.05]">
            <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
-                Pending Assigned To ({pendingRecipients.length})
+                Assigned To ({pendingRecipients.length})
             </p>
               <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
                 {pendingRecipients.map((assigned) => (
@@ -156,11 +156,6 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
                 <button onClick={(e) => onDelete(e, campaign)}
                   className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs transition-colors">
                   <Trash2 size={12} /> Delete
-                </button>
-                {/* Retry is kept beside Delete so destructive/recovery actions stay together. */}
-                <button onClick={(e) => { onRetry(e, campaign.id); onClose(); }}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-orange-500/10 hover:bg-orange-500/20 text-orange-400 text-xs transition-colors">
-                  <RefreshCw size={12} /> Retry
                 </button>
               </>}
             </div>

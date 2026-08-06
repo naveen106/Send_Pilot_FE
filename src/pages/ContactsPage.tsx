@@ -115,7 +115,7 @@ export default function ContactsPage() {
               <ListChecks size={14} /> Assign Campaigns
             </button>
             <button onClick={handleSendCampaign} className="btn-primary">
-              <Send size={14} /> Send Campaign to {selected.size}
+              <Send size={14} /> Assign New Campaign to {selected.size}
             </button>
           </div>
         )}

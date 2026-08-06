@@ -33,7 +33,7 @@ interface Props {
   onClose: () => void;
 }
 
-/** Compose panel for creating a new campaign. */
+/** Compose panel for creating a new campaign. This opens when you click create new campaign */
 export default function ComposeForm({
   form, toInput, toTags, toError, attachments, submitting,
   sendMode, showModeMenu, scheduledAt, dailyLimit,
@@ -82,7 +82,8 @@ export default function ComposeForm({
           className={`px-5 py-2.5 border-b flex items-start gap-3 cursor-text transition-colors ${toError ? 'border-red-500/30 bg-red-500/5' : 'border-white/[0.04]'}`}
           onClick={() => toInputRef.current?.focus()}
         >
-          <span className="text-[11px] text-slate-500 w-16 shrink-0 font-medium mt-1.5">To *</span>
+          {/*'To' field is not compuslory */}
+          <span className="text-[11px] text-slate-500 w-16 shrink-0 font-medium mt-1.5">To</span>
           <div className="flex-1 flex flex-wrap gap-1.5 min-h-[28px]">
             {/* Render each committed email as a removable chip, collapsed beyond CHIP_LIMIT */}
             {visibleTags.map((email) => (
