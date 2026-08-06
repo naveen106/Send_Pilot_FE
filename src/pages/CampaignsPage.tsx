@@ -198,9 +198,8 @@ export default function CampaignsPage() {
       setToTags(finalTags);
       setToInput('');
     }
-    if (finalTags.length === 0) { setToError('Add at least one recipient'); return; }
     if (typeof dailyLimit !== 'number' || !isValid24HourEmailLimit(dailyLimit)) { toast.error('24-hour email limit must be between 1 and 200'); return; }
-    if (sendMode === 'scheduled' && !scheduledAt) { toast.error('Please pick a schedule date & time'); return; }
+    if (finalTags.length > 0 && sendMode === 'scheduled' && !scheduledAt) { toast.error('Please pick a schedule date & time'); return; }
 
     setSubmitting(true);
     try {
@@ -212,11 +211,11 @@ export default function CampaignsPage() {
         sendMode,
         dailyLimit,
       }, attachments);
-      toast.success(
-        sendMode === 'immediate' ? 'Campaign queued!' :
-        sendMode === 'scheduled' ? 'Campaign scheduled!' :
-        'Interval campaign queued!'
-      );
+      toast.success(finalTags.length === 0
+        ? 'Campaign saved as draft. Add recipients when you are ready.'
+        : sendMode === 'immediate' ? 'Campaign queued!'
+        : sendMode === 'scheduled' ? 'Campaign scheduled!'
+        : 'Interval campaign queued!');
       closeForm();
       load();
     } catch (err: any) {

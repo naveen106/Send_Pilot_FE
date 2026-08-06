@@ -42,7 +42,9 @@ export default function PaginatedSearchDropdown<T>({
   const [focused, setFocused] = useState(false);
   const [requestError, setRequestError] = useState(false);
 
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  // Keep page 1 available for a non-empty search, even when the result set
+  // contains fewer items than one page.
+  const totalPages = total > 0 ? Math.max(1, Math.ceil(total / PAGE_SIZE)) : 0;
   const open = focused && query.trim().length > 0;
 
   useEffect(() => {
@@ -113,10 +115,10 @@ export default function PaginatedSearchDropdown<T>({
                   return <button key={getKey(item)} type="button" onClick={() => onSelect(item)} className="w-full text-left border-b border-white/[0.05] hover:bg-violet-500/10 transition-colors">{renderItem(item, selected)}</button>;
                 })}
               </div>
-              {totalPages > 1 && (
-                <div className="px-3 py-2 flex items-center justify-between bg-white/[0.02]">
-                  <span className="text-[10px] text-slate-600">{total} {resultLabel}</span>
-                  <div className="flex items-center gap-1">
+              {total > 0 && (
+                <div className="relative px-3 py-2 flex items-center bg-white/[0.02]">
+                  <span className="absolute left-3 text-[10px] text-slate-600">{total} {resultLabel}</span>
+                  <div className="mx-auto flex items-center gap-1">
                     <button type="button" disabled={page === 1 || loading} onClick={() => setPage((current) => current - 1)} className="p-1 text-slate-500 hover:text-white disabled:opacity-30" aria-label="Previous page"><ChevronLeft size={13} /></button>
                     {visiblePages.map((pageNumber, index) => {
                       const previous = visiblePages[index - 1];

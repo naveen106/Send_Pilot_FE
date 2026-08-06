@@ -109,7 +109,7 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
 {/* Full assigned contacts list- only shown when they exist */}
           <div className="px-6 py-4 border-b border-white/[0.05]">
            <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
-                Pending Assigned To ({pendingRecipients.length})
+                Assigned To ({pendingRecipients.length})
             </p>
               <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
                 {pendingRecipients.map((assigned) => (
