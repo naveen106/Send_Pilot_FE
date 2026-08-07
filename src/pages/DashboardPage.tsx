@@ -14,9 +14,9 @@ interface DashboardCard extends DashboardStatCardConfig {
 
 // Card configuration keeps the dashboard layout consistent and makes new metrics easy to add.
 const cards: DashboardCard[] = [
-  { key: 'totalEmails', label: 'Total Emails', icon: Mail, gradient: 'from-violet-600/20 to-violet-600/5', border: 'border-violet-500/20', iconBackground: 'bg-violet-500/20', iconColor: 'text-violet-400' },
   { key: 'totalCampaigns', label: 'Campaigns', icon: BarChart3, gradient: 'from-sky-600/20 to-sky-600/5', border: 'border-sky-500/20', iconBackground: 'bg-sky-500/20', iconColor: 'text-sky-400' },
   { key: 'totalContacts', label: 'Contacts', icon: Users, gradient: 'from-rose-600/20 to-rose-600/5', border: 'border-rose-500/20', iconBackground: 'bg-rose-500/20', iconColor: 'text-rose-400' },
+  { key: 'totalEmails', label: 'Total Emails', icon: Mail, gradient: 'from-violet-600/20 to-violet-600/5', border: 'border-violet-500/20', iconBackground: 'bg-violet-500/20', iconColor: 'text-violet-400' },
   { key: 'sentToday', label: 'Sent Today', icon: Send, gradient: 'from-emerald-600/20 to-emerald-600/5', border: 'border-emerald-500/20', iconBackground: 'bg-emerald-500/20', iconColor: 'text-emerald-400' },
   { key: 'scheduledCampaigns', label: 'Scheduled', icon: Calendar, gradient: 'from-amber-600/20 to-amber-600/5', border: 'border-amber-500/20', iconBackground: 'bg-amber-500/20', iconColor: 'text-amber-400' },
 ];
