@@ -185,9 +185,11 @@ export default function ComposeForm({
           </div>
         )}
 
-        <div className="px-5 py-2 border-b border-white/[0.04]">
-          <DailyLimitField id="campaign-daily-limit" value={dailyLimit} onChange={onDailyLimitChange} />
-        </div>
+        {sendMode !== 'immediate' && (
+          <div className="px-5 py-2 border-b border-white/[0.04]">
+            <DailyLimitField id="campaign-daily-limit" value={dailyLimit} onChange={onDailyLimitChange} />
+          </div>
+        )}
 
         {/* Footer toolbar: attach button on the left, send mode split-button on the right */}
         <div className="px-5 py-3 flex items-center justify-between">

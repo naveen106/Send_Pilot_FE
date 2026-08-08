@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { campaignsApi } from '../api';
+import { campaignsApi } from '../../api';
 import toast from 'react-hot-toast';
 import { X, Send, RefreshCw, Check } from 'lucide-react';
 import CampaignSelector from './CampaignSelector';

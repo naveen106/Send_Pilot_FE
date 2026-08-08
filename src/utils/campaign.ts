@@ -22,3 +22,19 @@ export function getAssignedRecipients(campaign: Campaign): string[] {
       return true;
     });
 }
+
+/** Returns only successfully delivered recipient addresses for campaign summaries. */
+export function getSuccessfulCampaignRecipientEmails(campaign: Campaign): string[] {
+  const addresses = (campaign.sentDeliveries ?? []).map((delivery) => delivery.email);
+  const seen = new Set<string>();
+
+  return addresses
+    .map((email) => email?.trim())
+    .filter((email): email is string => {
+      if (!email) return false;
+      const key = email.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}

@@ -4,7 +4,7 @@ import { Upload, FileSpreadsheet, RefreshCw } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { contactsApi } from '../api';
 import PageHeader from '../components/PageHeader';
-import CampaignSelector from '../components/CampaignSelector';
+import CampaignSelector from '../components/campaigns/CampaignSelector';
 
 export default function ImportPage() {
   const navigate = useNavigate();
