@@ -7,11 +7,11 @@ import { Plus, Trash2, Users, X, Send, ListChecks } from 'lucide-react';
 import ConfirmDialog from '../components/ConfirmDialog';
 import EmptyState from '../components/EmptyState';
 import PageHeader from '../components/PageHeader';
-import AssignCampaignsModal from '../components/AssignCampaignsModal';
+import AssignCampaignsModal from '../components/campaigns/AssignCampaignsModal';
 import { useSelection } from '../hooks/useSelection';
 import { isValidEmail } from '../utils/email';
 import Pagination from '../components/Pagination';
-import ContactSearchDropdown from '../components/ContactSearchDropdown';
+import ContactSearchDropdown from '../components/contacts/ContactSearchDropdown';
 
 const EMPTY_ROW = { email: '', name: '' };
 const PAGE_SIZE = 15;

@@ -13,7 +13,7 @@ import CampaignDetailModal from '../components/campaigns/CampaignDetailModal';
 import { usePolling } from '../hooks/usePolling';
 import { useSelection } from '../hooks/useSelection';
 import { extractEmails, hasEmail } from '../utils/email';
-import CampaignSearchDropdown from '../components/CampaignSearchDropdown';
+import CampaignSearchDropdown from '../components/campaigns/CampaignSearchDropdown';
 import Pagination from '../components/Pagination';
 import SendAssignedCampaignDialog from '../components/campaigns/SendAssignedCampaignDialog';
 import { getAssignedRecipients } from '../utils/campaign';

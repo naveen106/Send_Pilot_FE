@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
-import { campaignsApi } from '../api';
-import { Campaign } from '../types';
+import { campaignsApi } from '../../api';
+import { Campaign } from '../../types';
 import toast from 'react-hot-toast';
 import { RefreshCw, Search, Send } from 'lucide-react';
-import StatusBadge from './StatusBadge';
-import EmptyState from './EmptyState';
-import Pagination from './Pagination';
+import StatusBadge from '../StatusBadge';
+import EmptyState from '../EmptyState';
+import Pagination from '../Pagination';
 
 const PAGE_SIZE = 10;
 

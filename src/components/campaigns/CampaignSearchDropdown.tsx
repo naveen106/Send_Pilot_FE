@@ -1,7 +1,7 @@
-import { campaignsApi } from '../api';
-import { Campaign } from '../types';
-import StatusBadge from './StatusBadge';
-import PaginatedSearchDropdown from './PaginatedSearchDropdown';
+import { campaignsApi } from '../../api';
+import { Campaign } from '../../types';
+import StatusBadge from '../StatusBadge';
+import PaginatedSearchDropdown from '../PaginatedSearchDropdown';
 
 interface Props {
   onSelect?: (campaign: Campaign) => void;

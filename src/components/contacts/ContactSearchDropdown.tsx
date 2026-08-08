@@ -1,6 +1,6 @@
-import { contactsApi } from '../api';
-import { Contact } from '../types';
-import PaginatedSearchDropdown from './PaginatedSearchDropdown';
+import { contactsApi } from '../../api';
+import { Contact } from '../../types';
+import PaginatedSearchDropdown from '../PaginatedSearchDropdown';
 
 interface Props {
   selectedIds: Set<number>;
