@@ -2,6 +2,7 @@ import { X, FileText, Users, Paperclip, Trash2, RefreshCw, Send } from 'lucide-r
 import { Campaign } from '../../types';
 import StatusBadge from '../StatusBadge';
 import CampaignStatusNotice from './CampaignStatusNotice';
+import RecipientChipList, { RecipientChip } from './RecipientChipList';
 
 interface Props {
   campaign: Campaign;
@@ -21,6 +22,20 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
   const canRetryFailed = canSend && failedRecipients.length > 0;
   const failedEmails = new Set(failedRecipients.map((recipient) => recipient.email.trim().toLowerCase()));
   const pendingRecipients = assignedRecipients.filter((assigned) => !failedEmails.has(assigned.contacts.email.trim().toLowerCase()));
+  const sentItems: RecipientChip[] = sentDeliveries.map((delivery) => ({
+    key: delivery.id,
+    label: delivery.email,
+    title: new Date(delivery.sentAt).toLocaleString(),
+  }));
+  const failedItems: RecipientChip[] = failedRecipients.map((recipient) => ({
+    key: recipient.id,
+    label: recipient.email,
+    title: recipient.reason,
+  }));
+  const pendingItems: RecipientChip[] = pendingRecipients.map((assigned) => ({
+    key: assigned.contacts.id,
+    label: assigned.contacts.email,
+  }));
   return (
     // Clicking the backdrop closes the modal
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -74,15 +89,7 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
             <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
               Sent To ({sentDeliveries.length})
             </p>
-            <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-              {sentDeliveries.map((delivery) => (
-                <span key={delivery.id} title={new Date(delivery.sentAt).toLocaleString()}
-                  className="bg-emerald-500/10 border border-emerald-500/20 rounded-md px-2 py-0.5 text-xs text-emerald-300">
-                  {delivery.email}
-                </span>
-              ))}
-              {sentDeliveries.length === 0 && <span className="text-xs text-slate-600">No emails sent yet.</span>}
-            </div>
+            <RecipientChipList items={sentItems} tone="success" emptyMessage="No emails sent yet." />
           </div>
 
           {failedRecipients.length > 0 && (
@@ -98,14 +105,7 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
                   )}
                 </span>
               </p>
-              <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
-                {failedRecipients.map((recipient) => (
-                  <span key={recipient.id} title={recipient.reason}
-                    className="bg-red-500/10 border border-red-500/25 rounded-md px-2 py-0.5 text-xs text-red-300">
-                    {recipient.email}
-                  </span>
-                ))}
-              </div>
+              <RecipientChipList items={failedItems} tone="danger" emptyMessage="No failed recipients." />
             </div>
           )}
 
@@ -114,14 +114,7 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
            <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-2">
                 Assigned To ({pendingRecipients.length})
             </p>
-              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
-                {pendingRecipients.map((assigned) => (
-                  <span key={assigned.contacts.id} className="bg-violet-500/10 border border-violet-500/20 rounded-md px-2 py-0.5 text-xs text-violet-300">
-                    {assigned.contacts.email}
-                  </span>
-                ))}
-                {pendingRecipients.length === 0 && <span className="text-xs text-slate-600">No pending contacts are assigned to this campaign.</span>}
-              </div>
+              <RecipientChipList items={pendingItems} tone="pending" emptyMessage="No pending contacts are assigned to this campaign." />
             </div>
           
           {/* Attachment list — only shown when the campaign has files */}

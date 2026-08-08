@@ -2,6 +2,7 @@ import { Send, ChevronRight, Trash2 } from 'lucide-react';
 import { Campaign } from '../../types';
 import StatusBadge from '../StatusBadge';
 import EmptyState from '../EmptyState';
+import { getSuccessfulCampaignRecipientEmails } from '../../utils/campaign';
 
 interface Props {
   campaigns: Campaign[];
@@ -52,7 +53,9 @@ export default function CampaignTable({
             </tr>
           </thead>
           <tbody>
-            {campaigns.map((c) => (
+            {campaigns.map((c) => {
+              const recipientEmails = getSuccessfulCampaignRecipientEmails(c);
+              return (
               // Clicking a row opens the detail modal; selected rows get a violet tint
               <tr key={c.id} onClick={() => onRowClick(c)}
                 className={`table-row cursor-pointer transition-colors ${selected.has(c.id) ? 'bg-violet-500/5' : 'hover:bg-white/[0.03]'}`}>
@@ -72,15 +75,15 @@ export default function CampaignTable({
                 <td className="px-5 py-3.5 text-slate-500 text-xs max-w-[160px] truncate">{c.subject}</td>
                 {/* Recipients cell: shows first 2 emails as chips, then "+N more" overflow label */}
                 <td className="px-5 py-3.5 text-slate-400 text-xs">
-                  {c.recipients.length === 0 ? (
+                  {recipientEmails.length === 0 ? (
                     <span className="text-slate-700">—</span>
                   ) : (
                     <div className="flex flex-wrap gap-1 max-w-[220px]">
-                      {c.recipients.slice(0, 2).map((email) => (
+                      {recipientEmails.slice(0, 2).map((email) => (
                         <span key={email} className="bg-white/5 border border-white/[0.08] rounded px-1.5 py-0.5 truncate max-w-[140px]">{email}</span>
                       ))}
-                      {c.recipients.length > 2 && (
-                        <span className="text-slate-600 text-[11px] self-center">+{c.recipients.length - 2} more</span>
+                      {recipientEmails.length > 2 && (
+                        <span className="text-slate-600 text-[11px] self-center">+{recipientEmails.length - 2} more</span>
                       )}
                     </div>
                   )}
@@ -99,7 +102,8 @@ export default function CampaignTable({
                   )}
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       )}
