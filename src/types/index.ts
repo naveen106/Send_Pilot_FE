@@ -2,6 +2,7 @@ export type Role = 'ADMIN' | 'USER' | 'MANAGER';
 
 /** Campaign send strategy — controls how emails are dispatched. */
 export type SendMode = 'immediate' | 'scheduled' | 'interval';
+export type CampaignPauseReason = 'DAILY_LIMIT' | 'ACTIVE_SEND' | 'PERSISTENCE_FAILURE' | 'INTERRUPTED';
 
 export interface User {
   id: number;
@@ -23,6 +24,7 @@ export interface Campaign {
   subject: string;
   htmlContent: string;
   status: string;
+  pauseReason?: CampaignPauseReason | null;
   recipients: string[];
   totalCount: number;
   dailyLimit: number;

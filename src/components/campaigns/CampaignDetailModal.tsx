@@ -1,6 +1,7 @@
 import { X, FileText, Users, Paperclip, Trash2, RefreshCw, Send } from 'lucide-react';
 import { Campaign } from '../../types';
 import StatusBadge from '../StatusBadge';
+import CampaignStatusNotice from './CampaignStatusNotice';
 
 interface Props {
   campaign: Campaign;
@@ -45,6 +46,8 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
             </button>
           </div>
         </div>
+
+        <CampaignStatusNotice campaign={campaign} />
 
         {/* Scrollable body */}
         <div className="overflow-y-auto flex-1">
