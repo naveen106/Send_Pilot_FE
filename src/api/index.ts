@@ -4,6 +4,8 @@ import api from './client';
 export const authApi = {
   login: (email: string, password: string) =>
     api.post('/auth/login', { email, password }),
+  refresh: () => api.post('/auth/refresh'),
+  logout: () => api.post('/auth/logout'),
   me: () => api.get('/auth/me'),
   signup: (data: { email: string; password: string; name: string }) =>
     api.post('/auth/signup', data),
