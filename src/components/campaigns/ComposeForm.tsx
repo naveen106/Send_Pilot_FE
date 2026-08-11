@@ -3,6 +3,7 @@ import { Send, X, Paperclip, Clock, Shuffle } from 'lucide-react';
 import { SendMode } from '../../types';
 import SendModeMenu from './SendModeMenu';
 import DailyLimitField from './DailyLimitField';
+import HtmlContentEditor from '../../utils/HtmlContentEditor';
 
 interface Props {
   form: { name: string; subject: string; htmlContent: string };
@@ -143,10 +144,15 @@ export default function ComposeForm({
 
         {/* Email body — plain text / HTML content */}
         <div className="px-5 py-3 border-b border-white/[0.04]">
-          <textarea required placeholder="Write your email body here..."
-            rows={8} value={form.htmlContent}
-            onChange={(e) => onFormChange('htmlContent', e.target.value)}
-            className="w-full bg-transparent text-sm text-slate-200 placeholder-slate-600 outline-none resize-none" />
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-[11px] text-slate-500 font-medium">Body *</span>
+            <span className="text-[10px] text-slate-600">Code · Text · Preview</span>
+          </div>
+          <HtmlContentEditor
+            value={form.htmlContent}
+            required
+            onChange={(value) => onFormChange('htmlContent', value)}
+          />
         </div>
 
         {/* Attachment chips — only rendered when files have been selected */}

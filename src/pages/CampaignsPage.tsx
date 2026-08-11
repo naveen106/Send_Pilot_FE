@@ -18,6 +18,7 @@ import Pagination from '../components/Pagination';
 import SendAssignedCampaignDialog from '../components/campaigns/SendAssignedCampaignDialog';
 import { getAssignedRecipients } from '../utils/campaign';
 import { DEFAULT_24_HOUR_EMAIL_LIMIT, isValid24HourEmailLimit } from '../constants/email';
+import { normalizeEmailHtml } from '../utils/htmlToPlainText';
 
 // Default empty state for the compose form fields
 const EMPTY_FORM = { name: '', subject: '', htmlContent: '' };
@@ -205,7 +206,7 @@ export default function CampaignsPage() {
     setSubmitting(true);
     try {
       await campaignsApi.create({
-        name: form.name, subject: form.subject, htmlContent: form.htmlContent,
+        name: form.name, subject: form.subject, htmlContent: normalizeEmailHtml(form.htmlContent),
         recipients: finalTags,
         // Only send scheduledAt when mode is 'scheduled'
         scheduledAt: sendMode === 'scheduled' ? scheduledAt : undefined,
