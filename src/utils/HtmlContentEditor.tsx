@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Code2, Eye, WandSparkles } from 'lucide-react';
-import { formatHtml } from '../../utils/formatHtml';
+import { formatHtml } from './formatHtml';
 import {
   buildEmailPreviewDocument,
   deriveHtmlDraft,
@@ -8,8 +8,8 @@ import {
   hasHtmlMarkup,
   htmlToPlainText,
   resolveEmailBody,
-} from '../../utils/htmlToPlainText';
-import CodeEditor from '../common/CodeEditor';
+} from './htmlToPlainText';
+import CodeEditor from '../components/common/CodeEditor';
 
 type EditorTab = 'code' | 'text' | 'preview';
 

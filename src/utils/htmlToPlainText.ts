@@ -1,3 +1,5 @@
+import { htmlToText as convertHtmlToText } from 'html-to-text';
+
 /** True when the string contains real HTML markup (not just plain text). */
 export function hasHtmlMarkup(source: string): boolean {
   return /<\/?[a-z][^>]*>/i.test(source);
@@ -52,33 +54,18 @@ export function buildEmailPreviewDocument(body: string): string {
  * Converts HTML into readable plain text for the Text tab.
  * Strips non-content nodes and preserves basic block separation.
  */
+
 export function htmlToPlainText(source: string): string {
   if (!source) return '';
   if (!hasHtmlMarkup(source)) return source;
-  if (typeof DOMParser === 'undefined') {
-    return source.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-  }
 
-  const document = new DOMParser().parseFromString(source, 'text/html');
-  document.querySelectorAll('script, style, noscript, template').forEach((element) => element.remove());
-
-  // Turn common block boundaries into newlines before reading textContent,
-  // otherwise adjacent blocks glue together (e.g. "HelloWorld").
-  document.querySelectorAll('br').forEach((element) => {
-    element.replaceWith(document.createTextNode('\n'));
-  });
-  document.querySelectorAll('p, div, tr, li, h1, h2, h3, h4, h5, h6, header, footer, section, article, blockquote').forEach((element) => {
-    element.insertBefore(document.createTextNode('\n'), element.firstChild);
-    element.appendChild(document.createTextNode('\n'));
-  });
-
-  return (document.body?.textContent ?? '')
-    .replace(/\u00a0/g, ' ')
-    .replace(/[ \t]+\n/g, '\n')
-    .replace(/\n[ \t]+/g, '\n')
-    .replace(/[ \t]{2,}/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  return convertHtmlToText(source, {
+    wordwrap: false,
+    selectors: [
+      { selector: 'a', format: 'inline', options: { hideLinkHrefIfSameAsText: true } },
+      { selector: 'img', format: 'skip' },
+    ],
+  }).trim();
 }
 
 /** Seeds the Text-tab draft from a parent/prefill value. */

@@ -3,7 +3,7 @@ import { Send, X, Paperclip, Clock, Shuffle } from 'lucide-react';
 import { SendMode } from '../../types';
 import SendModeMenu from './SendModeMenu';
 import DailyLimitField from './DailyLimitField';
-import HtmlContentEditor from './HtmlContentEditor';
+import HtmlContentEditor from '../../utils/HtmlContentEditor';
 
 interface Props {
   form: { name: string; subject: string; htmlContent: string };
