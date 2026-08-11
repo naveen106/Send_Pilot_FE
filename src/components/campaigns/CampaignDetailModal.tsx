@@ -1,8 +1,10 @@
-import { X, FileText, Users, Paperclip, Trash2, RefreshCw, Send } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { X, FileText, Users, Paperclip, Trash2, RefreshCw, Send, Code2, Eye } from 'lucide-react';
 import { Campaign } from '../../types';
 import StatusBadge from '../StatusBadge';
 import CampaignStatusNotice from './CampaignStatusNotice';
 import RecipientChipList, { RecipientChip } from './RecipientChipList';
+import { buildEmailPreviewDocument, htmlToPlainText } from '../../utils/htmlToPlainText';
 
 interface Props {
   campaign: Campaign;
@@ -16,6 +18,8 @@ interface Props {
 
 /** Full-screen overlay showing campaign details with delete and retry actions. */
 export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClose, onDelete, onRetry, onSend }: Props) {
+  type ContentTab = 'code' | 'text' | 'preview';
+  const [contentTab, setContentTab] = useState<ContentTab>('preview');
   const assignedRecipients = campaign.assignedCampaigns ?? [];
   const sentDeliveries = campaign.sentDeliveries ?? [];
   const failedRecipients = campaign.failedRecipients ?? [];
@@ -36,6 +40,14 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
     key: assigned.contacts.id,
     label: assigned.contacts.email,
   }));
+  
+  // Keep the modal read-only while reusing the same body conversion and
+  // preview helpers used by the campaign composer.
+  const plainTextContent = useMemo(() => htmlToPlainText(campaign.htmlContent), [campaign.htmlContent]);
+  const previewDocument = useMemo(
+    () => buildEmailPreviewDocument(campaign.htmlContent),
+    [campaign.htmlContent],
+  );
   return (
     // Clicking the backdrop closes the modal
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={onClose}>
@@ -135,12 +147,49 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
             </div>
           )}
 
-          {/* Raw email body — displayed in a monospace scrollable box */}
+          {/* 'Code', 'Text', 'Preview' email body displayed in a scrollable box */}
           <div className="px-6 py-4">
-            <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium mb-3">Email Content</p>
-            <div className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
-              {campaign.htmlContent || <span className="text-slate-600">No content</span>}
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium">Email Content</p>
+              <div className="flex items-center gap-1">
+                {([
+                  { id: 'code', label: 'Code', icon: Code2 },
+                  { id: 'text', label: 'Text', icon: FileText },
+                  { id: 'preview', label: 'Preview', icon: Eye },
+                ] as const).map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setContentTab(id)}
+                    className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors ${contentTab === id ? 'bg-violet-500/15 text-violet-300' : 'text-slate-500 hover:bg-white/[0.05] hover:text-slate-300'}`}
+                  >
+                    {Icon && <Icon size={13} />}
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
+
+            {contentTab === 'code' && (
+              <pre className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap break-words font-mono max-h-64 overflow-y-auto">
+                {campaign.htmlContent || <span className="text-slate-600">No content</span>}
+              </pre>
+            )}
+
+            {contentTab === 'text' && (
+              <pre className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap break-words max-h-64 overflow-y-auto">
+                {plainTextContent || <span className="text-slate-600">No content</span>}
+              </pre>
+            )}
+
+            {contentTab === 'preview' && (
+              <iframe
+                title="Email content preview"
+                srcDoc={previewDocument}
+                sandbox=""
+                className="block h-64 w-full rounded-xl border border-white/[0.06] bg-white"
+              />
+            )}
           </div>
         </div>
 
