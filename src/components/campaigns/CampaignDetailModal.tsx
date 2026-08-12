@@ -153,8 +153,8 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
               <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium">Email Content</p>
               <div className="flex items-center gap-1">
                 {([
-                  { id: 'HTML', label: 'HTML', icon: Code2 },
                   { id: 'text', label: 'Text', icon: FileText },
+                  { id: 'HTML', label: 'HTML', icon: Code2 },
                   { id: 'preview', label: 'Preview', icon: Eye },
                 ] as const).map(({ id, label, icon: Icon }) => (
                   <button
