@@ -11,7 +11,7 @@ import {
 } from './htmlToPlainText';
 import CodeEditor from '../components/common/CodeEditor';
 
-type EditorTab = 'code' | 'text' | 'preview';
+type EditorTab = 'HTML' | 'text' | 'preview';
 
 interface Props {
   value: string;
@@ -26,7 +26,7 @@ interface Props {
  * - Preview: always renders exactly what will be sent
  */
 export default function HtmlContentEditor({ value, onChange, required = false }: Props) {
-  const [tab, setTab] = useState<EditorTab>('code');
+  const [tab, setTab] = useState<EditorTab>('HTML');
   const [htmlDraft, setHtmlDraft] = useState(() => deriveHtmlDraft(value));
   const [textDraft, setTextDraft] = useState(() => deriveTextDraft(value));
   const [formatting, setFormatting] = useState(false);
@@ -150,10 +150,10 @@ export default function HtmlContentEditor({ value, onChange, required = false }:
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => openTab('code')}
-            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors ${tab === 'code' ? 'bg-violet-500/15 text-violet-300' : 'text-slate-500 hover:text-slate-300'}`}
+            onClick={() => openTab('HTML')}
+            className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[11px] font-medium transition-colors ${tab === 'HTML' ? 'bg-violet-500/15 text-violet-300' : 'text-slate-500 hover:text-slate-300'}`}
           >
-            <Code2 size={13} /> Code
+            <Code2 size={13} /> HTML
           </button>
           <button
             type="button"
@@ -170,7 +170,7 @@ export default function HtmlContentEditor({ value, onChange, required = false }:
             <Eye size={13} /> Preview
           </button>
         </div>
-        {tab === 'code' && (
+        {tab === 'HTML' && (
           <button
             type="button"
             onClick={handleFormat}
@@ -187,7 +187,7 @@ export default function HtmlContentEditor({ value, onChange, required = false }:
         on every tab switch made it easy for React state and the visible document to
         drift apart, which left Text/Preview on an older body.
       */}
-      <div className={tab === 'code' ? 'block' : 'hidden'}>
+      <div className={tab === 'HTML' ? 'block' : 'hidden'}>
         <CodeEditor
           value={htmlDraft}
           onChange={handleCodeChange}

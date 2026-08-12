@@ -146,7 +146,7 @@ export default function ComposeForm({
         <div className="px-5 py-3 border-b border-white/[0.04]">
           <div className="mb-2 flex items-center justify-between">
             <span className="text-[11px] text-slate-500 font-medium">Body *</span>
-            <span className="text-[10px] text-slate-600">Code · Text · Preview</span>
+            <span className="text-[10px] text-slate-600">HTML · Text · Preview</span>
           </div>
           <HtmlContentEditor
             value={form.htmlContent}

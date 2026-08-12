@@ -18,7 +18,7 @@ interface Props {
 
 /** Full-screen overlay showing campaign details with delete and retry actions. */
 export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClose, onDelete, onRetry, onSend }: Props) {
-  type ContentTab = 'code' | 'text' | 'preview';
+  type ContentTab = 'HTML' | 'text' | 'preview';
   const [contentTab, setContentTab] = useState<ContentTab>('preview');
   const assignedRecipients = campaign.assignedCampaigns ?? [];
   const sentDeliveries = campaign.sentDeliveries ?? [];
@@ -147,13 +147,13 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
             </div>
           )}
 
-          {/* 'Code', 'Text', 'Preview' email body displayed in a scrollable box */}
+          {/* 'HTML', 'Text', 'Preview' email body displayed in a scrollable box */}
           <div className="px-6 py-4">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-[11px] text-slate-500 uppercase tracking-wider font-medium">Email Content</p>
               <div className="flex items-center gap-1">
                 {([
-                  { id: 'code', label: 'Code', icon: Code2 },
+                  { id: 'HTML', label: 'HTML', icon: Code2 },
                   { id: 'text', label: 'Text', icon: FileText },
                   { id: 'preview', label: 'Preview', icon: Eye },
                 ] as const).map(({ id, label, icon: Icon }) => (
@@ -170,7 +170,7 @@ export default function CampaignDetailModal({ campaign, isAdmin, canSend, onClos
               </div>
             </div>
 
-            {contentTab === 'code' && (
+            {contentTab === 'HTML' && (
               <pre className="bg-white/[0.03] border border-white/[0.06] rounded-xl p-4 text-xs text-slate-300 leading-relaxed whitespace-pre-wrap break-words font-mono max-h-64 overflow-y-auto">
                 {campaign.htmlContent || <span className="text-slate-600">No content</span>}
               </pre>
