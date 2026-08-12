@@ -1,151 +1,132 @@
 # BulkMailer — Frontend
 
-A dark-themed bulk email management platform built with React, TypeScript, and Tailwind CSS.
+BulkMailer is a React application for composing, scheduling, and monitoring bulk email campaigns through the BulkMailer API.
 
----
+## Features
 
-## Tech Stack
-
-- **React 19** + **TypeScript**
-- **Vite** — dev server & bundler
-- **Tailwind CSS** — styling
-- **React Router v6** — routing
-- **Axios** — HTTP client
-- **React Hot Toast** — notifications
-- **Lucide React** — icons
-
----
-
-## Prerequisites
-
-- [Node.js](https://nodejs.org/) v18 or higher
-- npm v9 or higher
-
----
-
-## Installation
-
-```bash
-# 1. Clone the repository
-git clone https://github.com/monkhaihq/bulk-email-sender-fe.git
-cd frontend
-
-# 2. Install dependencies
-npm install
-```
-
----
-
-## Environment Variables
-
-Copy the example file and fill in your values:
-
-```bash
-cp .env.example .env
-```
-
-| Variable | Description | Default |
-|---|---|---|
-| `VITE_API_URL` | Backend API base URL | `/api` |
-
-> If `VITE_API_URL` is left empty, Vite will proxy `/api` requests to the backend (see `vite.config.ts`).
-
----
-
-## Running Locally
-
-```bash
-npm run dev
-```
-
-App will be available at `http://localhost:3000`.
-
----
-
-## Building for Production
-
-```bash
-npm run build
-```
-
-Output is generated in the `dist/` folder. To preview the production build locally:
-
-```bash
-npm run preview
-```
-
----
+- Campaign creation with HTML editing, attachments, recipients, and flexible send modes
+- Campaign search, pagination, details, retry, assignment, and deletion
+- Dashboard statistics and delivery monitoring
+- Contact management, deduplication, and CSV/XLSX imports
+- Backend-connected authentication and session handling
+- Responsive dark interface with reusable UI components
+- Production-ready static deployment with Nginx
 
 ## Project Structure
 
-```
-src/
-├── api/
-│   ├── client.ts        # Axios instance — baseURL from VITE_API_URL, JWT interceptor, 401 redirect
-│   ├── index.ts         # All API endpoint functions (authApi, campaignsApi, contactsApi, dashboardApi)
-│   └── mockAuth.ts      # In-memory mock users; activated automatically on 5xx/no-response
-├── components/
-│   ├── campaigns/
-│   │   ├── ComposeForm.tsx         # New campaign compose panel (form, tag input, attachments, send mode)
-│   │   ├── CampaignTable.tsx       # Campaign list table with multi-select and delete
-│   │   ├── CampaignDetailModal.tsx # Full-screen campaign detail overlay with retry/delete
-│   │   └── SendModeMenu.tsx        # Split-button dropdown for immediate/scheduled/interval mode
-│   ├── layout/
-│   │   ├── Layout.tsx              # Sidebar + <Outlet> shell; nav filtered by role
-│   │   └── ProtectedRoute.tsx      # Auth guard + optional role guard; redirects to /login or /dashboard
-│   ├── ConfirmDialog.tsx           # Reusable destructive-action modal
-│   ├── EmptyState.tsx              # Centered empty-state block (icon, message, hint)
-│   ├── PageHeader.tsx              # Two-line page header (icon, label, title)
-│   └── StatusBadge.tsx             # Campaign status pill badge with color mapping
-├── context/
-│   └── AuthContext.tsx  # Auth state (user, token), login/logout/register/forgotPassword/resetPassword, hasRole()
-├── hooks/
-│   ├── useClickOutside.ts  # Calls handler on mousedown outside a ref — closes dropdowns/menus
-│   ├── usePolling.ts       # Runs a callback on interval while active; clears on cleanup
-│   └── useSelection.ts     # Multi-select state (toggle, toggleAll, clear, allSelected, someSelected)
-├── pages/
-│   ├── LoginPage.tsx           # Email + password sign-in form
-│   ├── DashboardPage.tsx       # Stats grid (totalEmails, sentToday, scheduledCampaigns, totalCampaigns)
-│   ├── CampaignsPage.tsx       # Campaign list, compose form, send-mode picker, detail modal, delete confirm
-│   ├── ContactsPage.tsx        # Contact list + add form (tab: contacts) / CSV-XLSX import (tab: imports)
-│   └── ResetPasswordPage.tsx   # Token-based password reset form
-├── types/
-│   └── index.ts         # Shared TS types: Role, SendMode, User, AuthState, Campaign, Contact, DashboardStats
-├── App.tsx              # BrowserRouter + route tree + Toaster config
-├── index.css            # Tailwind directives + @layer components (glass, btn-primary, btn-ghost, badge, input-field, table-row)
-└── main.tsx             # ReactDOM.createRoot entry point
+```text
+frontend/
+├── public/                    # Static assets
+├── src/                       # Main application source
+│   ├── api/                   # API client and endpoint definitions
+│   ├── components/            # Reusable UI and feature components
+│   ├── context/               # Shared React state
+│   ├── hooks/                 # Reusable React hooks
+│   ├── pages/                 # Dashboard, campaign, contact, and import screens
+│   ├── types/                 # Shared TypeScript types
+│   ├── utils/                 # Formatting and email utilities
+│   ├── App.tsx                # Routes and application composition
+│   └── main.tsx               # Application entry point
+├── docs/                      # Setup, run, and usage guides
+│   ├── setup.md               # Installation and environment setup
+│   ├── run.md                 # Start, stop, and check commands
+│   └── Usage.md               # Short web app usage guide
+├── .env.example               # Environment variable template
+├── scripts/setup.sh           # Local setup automation
+├── Dockerfile                 # Production container definition
+├── nginx.conf                 # Static hosting and SPA fallback
+├── package.json               # Dependencies and npm scripts
+└── vite.config.ts             # Dev server and API proxy
 ```
 
----
+## Quick Start
 
-## Roles & Access
+### Prerequisites
 
-| Role | Dashboard | Campaigns | Contacts | Users | SMTP | Logs | Scheduler |
-|---|---|---|---|---|---|---|---|
-| `ADMIN` | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| `MANAGER` | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
-| `USER` | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+- [Node.js](https://nodejs.org/) `22.12` or newer
+- npm `10` or newer
+- BulkMailer backend running on port `5000`, unless `VITE_API_URL` points elsewhere
 
----
+### Run the development app
 
-## Mock Auth (Offline Mode)
+```bash
+npm install
+cp .env.example .env
+npm run dev
+```
 
-When the backend is unreachable (5xx or no response), the app automatically falls back to a local mock. Test credentials:
+The app runs at [http://localhost:3000](http://localhost:3000). On PowerShell, use `Copy-Item .env.example .env` instead of `cp .env.example .env`.
 
-| Email | Password | Role |
-|---|---|---|
-| `admin@test.com` | `admin123` | ADMIN |
-| `manager@test.com` | `manager123` | MANAGER |
-| `user@test.com` | `user123` | USER |
+For detailed instructions, see [`docs/setup.md`](docs/setup.md), [`docs/run.md`](docs/run.md), and [`docs/Usage.md`](docs/Usage.md).
 
----
+### One-command setup
 
-## Connecting to the Backend
+```bash
+bash scripts/setup.sh
+```
 
-Set `VITE_API_URL` in your `.env` to point to your running backend:
+The script installs the locked dependencies, preserves an existing `.env`, and validates a production build. If `.env` does not exist, it copies `.env.example` as a starting template. It is safe to rerun. Start the web app afterward with `npm run dev`.
+
+### Build and preview
+
+```bash
+npm run build
+npm run preview
+```
+
+The production output is written to [`dist/`](dist/).
+
+### Run with Docker
+
+```bash
+docker build --build-arg VITE_API_URL=/api -t bulkmailer-frontend .
+docker run --rm -p 8080:80 bulkmailer-frontend
+```
+
+Open [http://localhost:8080](http://localhost:8080).
+
+The image uses Node `24.18.0` for the build stage and Nginx `1.27-alpine` to serve the compiled application. It also exposes a health endpoint at [http://localhost:8080/health](http://localhost:8080/health), which returns `ok` when the container is serving correctly.
+
+The Docker image was verified with the current dependency lockfile and production build. Both the root application route and `/health` returned HTTP `200`.
+
+## Available Scripts
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Starts the Vite development server on port `3000`. |
+| `npm run build` | Type-checks and creates an optimized build in [`dist/`](dist/). |
+| `npm run check` | Runs the same validation and build pipeline as `npm run build`. |
+| `npm run preview` | Serves the latest production build locally. |
+
+## Configuration
+
+Environment variables are read at build time by Vite. Copy [`.env.example`](.env.example) to [`.env`](.env) and set:
+
+| Variable | Description | Development default |
+| --- | --- | --- |
+| `VITE_API_URL` | Backend API base URL. | `/api` through the Vite proxy |
 
 ```env
-VITE_API_URL=http://localhost:5000/api
+# Local development through the Vite proxy
+VITE_API_URL=
+
+# Direct API connection
+VITE_API_URL=https://api.example.com/api
 ```
 
-The API client automatically attaches the JWT token from `localStorage` to every request and redirects to `/login` on `401` responses.
+For Docker deployments, pass `VITE_API_URL` as a build argument because Vite embeds it into the generated bundle. Use `/api` when a reverse proxy routes API requests to the backend, or provide the backend's full public URL for a standalone frontend deployment.
+
+## Backend Integration
+
+The request layer is centralized in [`src/api/client.ts`](src/api/client.ts), and endpoint definitions live in [`src/api/index.ts`](src/api/index.ts). Authenticated requests use the application session token; expired sessions are refreshed when possible and unauthenticated responses redirect to `/login`.
+
+## Engineering Notes
+
+- Keep route-level behavior in [`src/pages/`](src/pages/) and reusable presentation in [`src/components/`](src/components/).
+- Add backend calls to the appropriate API module before wiring them into a page.
+- Run `npm run check` before opening a pull request.
+- Do not commit `.env` files or production credentials.
+
+## License
+
+This project is private and intended for internal use.
