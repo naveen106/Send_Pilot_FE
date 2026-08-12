@@ -47,6 +47,9 @@ export default function LoginPage() {
           <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading && <Loader2 size={15} className="animate-spin" />} Sign In
           </button>
+          <p className="mt-3 rounded-lg border-violet-400/20 bg-violet-400/5 px-3 py-2 text-xs leading-4 text-violet-200/80 text-center">
+            Offline preview: <span className="font-medium text-violet-200">demo@example.com</span> / <span className="font-medium text-violet-200">demo123</span>
+          </p>
         </form>
       </section>
     </AuthShell>

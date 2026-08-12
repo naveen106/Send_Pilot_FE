@@ -5,6 +5,11 @@ import {
   mockLogin,
   mockGetUserFromToken,
 } from '../api/mockAuth';
+import {
+  isOfflineDemoCredentials,
+  offlineDemoUser,
+  OFFLINE_DEMO_SESSION_KEY,
+} from '../api/offlineDemo';
 
 interface AuthContextType {
   user: User | null;
@@ -41,12 +46,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setToken(null);
         })
         .finally(() => setLoading(false));
+    } else if (sessionStorage.getItem(OFFLINE_DEMO_SESSION_KEY) === 'true') {
+      setUser(offlineDemoUser);
+      setLoading(false);
     } else {
       setLoading(false);
     }
   }, []);
 
   async function login(email: string, password: string) {
+    // The documented demo account is always local-only. This avoids an API
+    // interceptor redirect when the backend is unavailable or rejects it.
+    if (isOfflineDemoCredentials(email, password)) {
+      localStorage.removeItem('token');
+      sessionStorage.setItem(OFFLINE_DEMO_SESSION_KEY, 'true');
+      setToken(null);
+      setUser(offlineDemoUser);
+      return;
+    }
+
     try {
       const res = await authApi.login(email, password);
       const { token: t, user: u } = res.data.data;
@@ -83,6 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   function logout() {
     void authApi.logout().catch(() => undefined);
     localStorage.removeItem('token');
+    sessionStorage.removeItem(OFFLINE_DEMO_SESSION_KEY);
     setToken(null);
     setUser(null);
   }

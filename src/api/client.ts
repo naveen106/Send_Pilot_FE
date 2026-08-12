@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { isOfflineDemoSession, OFFLINE_DEMO_SESSION_KEY } from './offlineDemo';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
@@ -8,6 +9,11 @@ const api = axios.create({
 let refreshRequest: Promise<string> | null = null;
 
 api.interceptors.request.use((config) => {
+  // Demo mode is UI-only: do not send any request to the backend, even without a JWT.
+  if (isOfflineDemoSession()) {
+    throw new Error('Backend API access is disabled in offline demo mode');
+  }
+
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
@@ -40,7 +46,7 @@ api.interceptors.response.use(
       }
     }
 
-    if (err.response?.status === 401) {
+    if (err.response?.status === 401 && sessionStorage.getItem(OFFLINE_DEMO_SESSION_KEY) !== 'true') {
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       window.location.href = '/login';
