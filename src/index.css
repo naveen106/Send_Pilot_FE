@@ -1,3 +1,4 @@
+/* Tailwind v4 discovers classes from the source tree; the old config file is not needed. */
 @import "tailwindcss";
 
 @theme {
