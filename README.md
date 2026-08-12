@@ -27,7 +27,12 @@ frontend/
 │   ├── utils/                 # Formatting and email utilities
 │   ├── App.tsx                # Routes and application composition
 │   └── main.tsx               # Application entry point
+├── docs/                      # Setup, run, and usage guides
+│   ├── setup.md               # Installation and environment setup
+│   ├── run.md                 # Start, stop, and check commands
+│   └── Usage.md               # Short web app usage guide
 ├── .env.example               # Environment variable template
+├── scripts/setup.sh           # Local setup automation
 ├── Dockerfile                 # Production container definition
 ├── nginx.conf                 # Static hosting and SPA fallback
 ├── package.json               # Dependencies and npm scripts
@@ -51,6 +56,16 @@ npm run dev
 ```
 
 The app runs at [http://localhost:3000](http://localhost:3000). On PowerShell, use `Copy-Item .env.example .env` instead of `cp .env.example .env`.
+
+For detailed instructions, see [`docs/setup.md`](docs/setup.md), [`docs/run.md`](docs/run.md), and [`docs/Usage.md`](docs/Usage.md).
+
+### One-command setup
+
+```bash
+bash scripts/setup.sh
+```
+
+The script installs the locked dependencies, preserves an existing `.env`, and validates a production build. If `.env` does not exist, it copies `.env.example` as a starting template. It is safe to rerun. Start the web app afterward with `npm run dev`.
 
 ### Build and preview
 
