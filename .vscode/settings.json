@@ -1,5 +1,0 @@
-{
-  // Tailwind v4 adds valid at-rules such as @theme and @apply that the
-  // built-in CSS language service does not understand.
-  "css.lint.unknownAtRules": "ignore"
-}
