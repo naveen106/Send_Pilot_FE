@@ -41,13 +41,15 @@ export default function LoginPage() {
             <label htmlFor="login-password" className="mb-1.5 flex items-center gap-1.5 text-[11px] font-medium text-slate-500"><Lock size={13} className="text-slate-600" /> Password</label>
             <input id="login-password" ref={passwordRef} type="password" required autoComplete="current-password" placeholder="••••••••" className="input-field" />
           </div>
-          <div className="flex justify-end pt-0.5">
+          <div className=" hidden flex justify-end pt-0.5">
             <Link to="/forgot-password" className="text-xs font-medium text-violet-300 transition-colors hover:text-violet-200">Forgot password?</Link>
           </div>
           <button type="submit" disabled={loading} className="btn-primary w-full">
             {loading && <Loader2 size={15} className="animate-spin" />} Sign In
           </button>
-          <p className="mt-3 rounded-lg border-violet-400/20 bg-violet-400/5 px-3 py-2 text-xs leading-4 text-violet-200/80 text-center">
+
+          {/** Hidden right now */}
+          <p className="hidden mt-3 rounded-lg border-violet-400/20 bg-violet-400/5 px-3 py-2 text-xs leading-4 text-violet-200/80 text-center">
             Offline preview: <span className="font-medium text-violet-200">demo@example.com</span> / <span className="font-medium text-violet-200">demo123</span>
           </p>
         </form>
