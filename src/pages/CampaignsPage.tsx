@@ -112,9 +112,9 @@ export default function CampaignsPage() {
 
   useEffect(() => { load(page); }, [page]);
 
-  // Poll every 5 s while any campaign is RUNNING or DRAFT (actively changing)
+  // Poll every 5 s while any campaign is RUNNING (actively changing)
   // Poll every 60 s while campaigns are only SCHEDULED (waiting for their start time)
-  const hasHot = campaigns.some((c) => c.status === 'RUNNING' || c.status === 'DRAFT')
+  const hasHot = campaigns.some((c) => c.status === 'RUNNING')
     || activeSendCampaignId !== null;
   const hasScheduled = campaigns.some((c) => c.status === 'SCHEDULED');
   usePolling(load, 5000, hasHot);
