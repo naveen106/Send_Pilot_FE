@@ -12,6 +12,12 @@ BulkMailer is a React application for composing, scheduling, and monitoring bulk
 - Responsive dark interface with reusable UI components
 - Production-ready static deployment with Nginx
 
+## Product walkthrough
+
+![BulkMailer product walkthrough](public/bulkmailer-demo-1.gif)
+
+![](public/bulkmailer-demo-2.gif)
+
 ## Project Structure
 
 ```text
